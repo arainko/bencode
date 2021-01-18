@@ -16,13 +16,13 @@ object Encoder {
 
   implicit val intEncoder: Encoder[Int] = BInt(_)
 
-  implicit def encodeMap[A: Encoder]: Encoder[Map[String, A]] =
-    map =>
-      BDict {
-        map.map {
-          case (label, value) => (label, Encoder[A].apply(value))
-        }
-      }
+//  implicit def encodeMap[A: Encoder]: Encoder[Map[String, A]] =
+//    map =>
+//      BDict {
+//        map.map {
+//          case (label, value) => (label, Encoder[A].apply(value))
+//        }
+//      }
 
   implicit def encodeList[A: Encoder]: Encoder[List[A]] =
     list => BList(list.map(Encoder[A].apply): _*)
