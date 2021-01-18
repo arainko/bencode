@@ -19,7 +19,9 @@ sealed trait Bencode {
 object Bencode {
   final case class BString(value: String)              extends Bencode
   final case class BInt(value: Int)                    extends Bencode
-  final case class BList(values: Bencode*)             extends Bencode
+  final case class BList(values: Bencode*)             extends Bencode {
+    override def toString: String =s"Blist(${values.mkString(", ")})"
+  }
   final case class BDict(value: Map[BString, Bencode]) extends Bencode
 
   object BDict {
@@ -46,12 +48,12 @@ object Bencode {
 
   def parseBList(value: String): Option[BList] = {
     def helper(curr: String, acc: List[Bencode]): Option[BList] = curr match {
-      case int if parseInt(curr).isDefined =>
+      case int if int.headOption.contains('i') =>
         (for {
           parsed <- parseInt(int)
           length = parsed.stringify.length
         } yield helper(curr.drop(length), acc :+ parsed)).flatten
-      case string if parseBString(curr).isDefined =>
+      case string if string.headOption.exists(_.isDigit) =>
         (for {
           parsed <- parseBString(string)
           length = parsed.stringify.length
@@ -61,7 +63,7 @@ object Bencode {
           parsed <- parseBList(list)
           length = parsed.stringify.length
         } yield helper(curr.drop(length), acc :+ parsed)).flatten
-      case "e" => Some(BList(acc: _*))
+      case endList if endList.headOption.contains('e') =>  Some(BList(acc: _*))
     }
     helper(value.drop(1), Nil)
   }
