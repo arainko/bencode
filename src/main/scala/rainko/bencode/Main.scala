@@ -5,10 +5,11 @@ import Bencode._
 import syntax._
 
 object Main extends App {
-
-  val bval =
-    BList(1.encode, "dupaaaal".encode, BList(1.encode, BList(1.encode, 2.encode, 10.encode), 3.encode), "asdasd".encode)
-  val stringified = bval.stringify
-  val parsed      = Bencode.parseBList(bval.stringify + "asd")
-  println(parsed)
+  val personDec = implicitly[Decoder[Person]]
+  val person = Person("Aleksander", "Rainko", 21)
+  val encodedPerson = person.encode
+  val stringifiedPerson = encodedPerson.stringify
+  val parsedPerson = Bencode.parse(stringifiedPerson)
+  val decoded = parsedPerson.toRight("WRONG").flatMap(ben => personDec(ben))
+  println(decoded)
 }

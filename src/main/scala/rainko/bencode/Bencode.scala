@@ -1,6 +1,8 @@
 package rainko
 package rainko.bencode
 
+import scala.annotation.tailrec
+
 sealed trait Bencode {
   import Bencode._
 
@@ -21,7 +23,7 @@ object Bencode {
   final case class BInt(value: Int)       extends Bencode
 
   final case class BList(values: Bencode*) extends Bencode {
-    override def toString: String = s"Blist(${values.mkString(", ")})"
+    override def toString: String = s"BList(${values.mkString(", ")})"
   }
   final case class BDict(value: Map[BString, Bencode]) extends Bencode
 
@@ -33,53 +35,44 @@ object Bencode {
       }
   }
 
-  def parseBList(value: String): Option[BList] = {
+  def parse(encoded: String): Option[Bencode] =
+    encoded match {
+      case int if int.headOption.contains('i') => parseBInt(int)
+      case string if string.headOption.exists(_.isDigit) => parseBString(string)
+      case list if list.headOption.contains('l') => parseBList(list)
+      case dict if dict.headOption.contains('d') => parseBDict(dict)
+      case _ => None
+    }
+
+  private def parseBList(value: String): Option[BList] = {
     def helper(curr: String, acc: List[Bencode]): Option[BList] =
       curr match {
-        case int if int.headOption.contains('i') =>
-          parseInt(int).flatMap { parsed =>
-            val skippedLength = skipSize(parsed)
-            helper(curr.drop(skippedLength), acc :+ parsed)
-          }
-        case string if string.headOption.exists(_.isDigit) =>
-          parseBString(string).flatMap { parsed =>
-            val skippedLength = skipSize(parsed)
-            helper(curr.drop(skippedLength), acc :+ parsed)
-          }
-        case list if list.headOption.contains('l') =>
-          parseBList(list).flatMap { parsed =>
-            val skippedLength = skipSize(parsed)
-            helper(curr.drop(skippedLength), acc :+ parsed)
-          }
         case endList if endList.headOption.contains('e') => Some(BList(acc: _*))
+        case listElem =>
+          parse(listElem).flatMap { parsed =>
+            val skippedLength = skipSize(parsed)
+            helper(curr.drop(skippedLength), acc :+ parsed)
+          }
       }
     helper(value.drop(1), Nil)
   }
 
-//  private def parseBDict(value: String): Option[BDict] = {
-//    def helper(curr: String, acc: List[(BString, Bencode)]): Option[BDict] =
-//      curr match {
-//        case int if int.headOption.contains('i') =>
-//          parseInt(int).flatMap { parsed =>
-//            val skippedLength = skipSize(parsed)
-//            helper(curr.drop(skippedLength), acc :+ parsed)
-//          }
-//        case string if string.headOption.exists(_.isDigit) =>
-//          parseBString(string).flatMap { parsed =>
-//            val skippedLength = skipSize(parsed)
-//            helper(curr.drop(skippedLength), acc :+ parsed)
-//          }
-//        case list if list.headOption.contains('l') =>
-//          parseBList(list).flatMap { parsed =>
-//            val skippedLength = skipSize(parsed)
-//            helper(curr.drop(skippedLength), acc :+ parsed)
-//          }
-//        case endList if endList.headOption.contains('e') => Some(BList(acc: _*))
-//      }
-//
-//  }
+  private def parseBDict(value: String): Option[BDict] = {
+    def helper(curr: String, acc: List[(BString, Bencode)]): Option[BDict] =
+      curr match {
+        case entry if entry.headOption.exists(_.isDigit) =>
+          (for {
+            label <- parseBString(entry)
+            labelSize = skipSize(label)
+            value <- parse(entry.drop(labelSize))
+            valueSize = skipSize(value)
+          } yield helper(entry.drop(labelSize + valueSize), acc :+ (label -> value))).flatten
+        case endDict if endDict.headOption.contains('e') => Some(BDict(acc.toMap))
+      }
+      helper(value.drop(1), Nil)
+  }
 
-  private def parseInt(value: String) =
+  private def parseBInt(value: String) =
     value.drop(1).takeWhile(_ != 'e').toIntOption.map(BInt)
 
   private def parseBString(string: String) = {
