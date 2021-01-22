@@ -1,7 +1,7 @@
-package rainko
 package rainko.bencode
 
 import Bencode._
+import shapeless._
 
 trait Encoder[A] { self =>
   def apply(value: A): Bencode
@@ -16,6 +16,13 @@ object Encoder {
 
   implicit val intEncoder: Encoder[Int] = BInt(_)
 
+  implicit val longEncoder: Encoder[Long] = intEncoder.contramap(_.intValue)
+
+  implicit val booleanEncoder: Encoder[Boolean] =
+    stringEncoder.contramap { bool =>
+      if (bool) "true" else "false"
+    }
+
 //  implicit def encodeMap[A: Encoder]: Encoder[Map[String, A]] =
 //    map =>
 //      BDict {
@@ -24,6 +31,6 @@ object Encoder {
 //        }
 //      }
 
-  implicit def encodeList[A: Encoder]: Encoder[List[A]] =
+  implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] =
     list => BList(list.map(Encoder[A].apply): _*)
 }

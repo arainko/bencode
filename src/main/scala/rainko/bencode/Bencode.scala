@@ -1,4 +1,3 @@
-package rainko
 package rainko.bencode
 
 import scala.annotation.tailrec

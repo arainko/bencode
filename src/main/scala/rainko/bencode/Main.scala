@@ -1,15 +1,11 @@
-package rainko
 package rainko.bencode
 
-import Bencode._
-import syntax._
+import shapeless._
+import rainko.bencode.syntax.EncoderOps
+import rainko.bencode.derivation._
 
 object Main extends App {
-  val personDec = implicitly[Decoder[Person]]
-  val person = Person("Aleksander", "Rainko", 21)
-  val encodedPerson = person.encode
-  val stringifiedPerson = encodedPerson.stringify
-  val parsedPerson = Bencode.parse(stringifiedPerson)
-  val decoded = parsedPerson.toRight("WRONG").flatMap(ben => personDec(ben))
-  println(decoded)
+  val cos = (1, 2, 3)
+  val encoder = cos.encode
+  println(encoder)
 }
