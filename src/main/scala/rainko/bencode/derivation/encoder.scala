@@ -1,10 +1,11 @@
-package rainko.bencode
+package rainko.bencode.derivation
 
 import rainko.bencode.Bencode.{BDict, BString}
-import shapeless._
+import rainko.bencode.{Bencode, Decoder, Encoder}
 import shapeless.labelled.FieldType
+import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness}
 
-object derivation {
+object encoder {
 
   trait BObjectEncoder[A] extends Encoder[A] {
     def apply(value: A): BDict
@@ -21,7 +22,7 @@ object derivation {
       val label       = witness.value.name
       val encodedHead = headEncoder.value.apply(hlist.head)
       val encodedTail = tailEncoder.apply(hlist.tail)
-      BDict(encodedTail.value + (BString(label) -> encodedHead))
+      BDict(encodedTail.fields + (BString(label) -> encodedHead))
     }
 
   implicit def productAsObjectEncoder[P <: Product, HL <: HList](implicit
