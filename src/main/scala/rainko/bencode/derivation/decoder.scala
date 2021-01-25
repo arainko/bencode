@@ -23,10 +23,11 @@ object decoder {
     headDecoder: Lazy[Decoder[H]],
     tailDecoder: BObjectDecoder[T]
   ): BObjectDecoder[FieldType[K, H] :: T] =
-    (value: BDict) => for {
-      head <- value.get[H](witness.value.name)(headDecoder.value)
-      tail <- tailDecoder(value)
-    } yield field[K](head) :: tail
+    (value: BDict) =>
+      for {
+        head <- value.get[H](witness.value.name)(headDecoder.value)
+        tail <- tailDecoder(value)
+      } yield field[K](head) :: tail
 
   implicit def productAsObjectDecoder[P <: Product, HL <: HList](implicit
     gen: LabelledGeneric.Aux[P, HL],

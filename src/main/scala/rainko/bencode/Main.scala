@@ -5,8 +5,12 @@ import rainko.bencode.derivation.encoder._
 import rainko.bencode.syntax._
 
 object Main extends App {
-  val cos = Person("Adam", "Wensker", 19, Bruh("BRUH", 1))
-  val parsed = Bencode.parse("d4:name4:adam7:surname1:a3:agei3ee")
-  val encoder = cos.encode
-  println(parsed.map(_.decode[Person]))
+
+  sealed trait Costam
+  final case class Costam1(cos: String, cos2: Int) extends Costam
+  final case class Costam2(cos3: String, cos4: Int) extends Costam
+
+  val cos: Option[Int] = Some(1)
+
+  println(Bencode.parse(cos.encode.stringify))
 }

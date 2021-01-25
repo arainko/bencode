@@ -7,34 +7,38 @@ sealed trait Bencode {
 
   final def stringify: String =
     this match {
-      case BString(value)     => s"${value.length}:$value"
-      case BInt(value)        => s"i${value}e"
-      case BList(values) => s"l${values.map(_.stringify).mkString}e"
+      case BString(value) => s"${value.length}:$value"
+      case BInt(value)    => s"i${value}e"
+      case BList(values)  => s"l${values.map(_.stringify).mkString}e"
       case BDict(values) =>
         values
           .map { case (key, value) => s"${key.stringify}${value.stringify}" }
           .mkString("d", "", "e")
     }
 
-  final def int: Option[BInt] = this match {
-    case int: BInt => Some(int)
-    case _ => None
-  }
+  final def int: Option[BInt] =
+    this match {
+      case int: BInt => Some(int)
+      case _         => None
+    }
 
-  final def string: Option[BString] = this match {
-    case string: BString => Some(string)
-    case _ => None
-  }
+  final def string: Option[BString] =
+    this match {
+      case string: BString => Some(string)
+      case _               => None
+    }
 
-  final def list: Option[BList] = this match {
-    case list: BList => Some(list)
-    case _ => None
-  }
+  final def list: Option[BList] =
+    this match {
+      case list: BList => Some(list)
+      case _           => None
+    }
 
-  final def dict: Option[BDict] = this match {
-    case dict: BDict => Some(dict)
-    case _ => None
-  }
+  final def dict: Option[BDict] =
+    this match {
+      case dict: BDict => Some(dict)
+      case _           => None
+    }
 
   final def decode[A: Decoder]: Either[String, A] = Decoder[A].apply(this)
 }
@@ -52,7 +56,8 @@ object Bencode {
     def get(key: String): Option[Bencode] = fields.get(BString(key))
 
     def get[A: Decoder](key: String): Either[String, A] =
-      fields.get(BString(key))
+      fields
+        .get(BString(key))
         .toRight(s"No key $key found!")
         .flatMap(_.decode)
 
@@ -121,10 +126,10 @@ object Bencode {
 
   private def skipSize(bencode: Bencode): Int =
     bencode match {
-      case BString(value)     => value.length + value.length.toString.length + 1
-      case BInt(value)        => value.toString.length + 2
-      case BList(values) => values.foldLeft(0)((acc, curr) => acc + skipSize(curr)) + 2
-      case BDict(value)       => value.foldLeft(0)((acc, curr) => acc + skipSize(curr._1) + skipSize(curr._2)) + 2
+      case BString(value) => value.length + value.length.toString.length + 1
+      case BInt(value)    => value.toString.length + 2
+      case BList(values)  => values.foldLeft(0)((acc, curr) => acc + skipSize(curr)) + 2
+      case BDict(value)   => value.foldLeft(0)((acc, curr) => acc + skipSize(curr._1) + skipSize(curr._2)) + 2
     }
 
 }
