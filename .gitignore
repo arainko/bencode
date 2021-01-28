@@ -1,5 +1,13 @@
 # Project exclude paths
-/project/project/target/
-/project/target/
-/target/
-/target/scala-2.13/classes/
+.bloop/
+.bsp/
+.idea/
+.metals/
+.vscode/
+target/
+project/.bloop/
+project/target/
+project/project
+project/metals.sbt
+
+.idea/modules/bencode-build.iml

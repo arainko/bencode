@@ -18,10 +18,12 @@ object decoder {
 
   implicit val hnilDecoder: BObjectDecoder[HNil] = _ => Right(HNil)
 
+  implicit val cnilDecoder: BObjectDecoder[CNil] = _ => Left("CNil!")
+
   implicit def hlistObjectDecoder[K <: Symbol, H, T <: HList](implicit
-    witness: Witness.Aux[K],
-    headDecoder: Lazy[Decoder[H]],
-    tailDecoder: BObjectDecoder[T]
+      witness: Witness.Aux[K],
+      headDecoder: Lazy[Decoder[H]],
+      tailDecoder: BObjectDecoder[T]
   ): BObjectDecoder[FieldType[K, H] :: T] =
     (value: BDict) =>
       for {
@@ -29,9 +31,25 @@ object decoder {
         tail <- tailDecoder(value)
       } yield field[K](head) :: tail
 
+  implicit def coproductObjectDecoder[K <: Symbol, H, T <: Coproduct](implicit
+      witness: Witness.Aux[K],
+      headDecoder: Lazy[Decoder[H]],
+      tailDecoder: BObjectDecoder[T]
+  ): BObjectDecoder[FieldType[K, H] :+: T] =
+    (value: BDict) =>
+      value.get[H](witness.value.name)(headDecoder.value) match {
+        case Right(value) => Right(Inl(field[K](value)))
+        case Left(_)      => tailDecoder(value).map(Inr.apply)
+      }
+
+  implicit def coproductAsObjectDecoder[P, C <: Coproduct](implicit
+      gen: LabelledGeneric.Aux[P, C],
+      encoder: Lazy[BObjectDecoder[C]]
+  ): Decoder[P] = encoder.value.map(gen.from)
+
   implicit def productAsObjectDecoder[P <: Product, HL <: HList](implicit
-    gen: LabelledGeneric.Aux[P, HL],
-    encoder: Lazy[BObjectDecoder[HL]]
+      gen: LabelledGeneric.Aux[P, HL],
+      encoder: Lazy[BObjectDecoder[HL]]
   ): Decoder[P] = encoder.value.map(gen.from)
 
 }

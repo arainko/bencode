@@ -1,6 +1,5 @@
 package rainko.bencode
 
-import scala.annotation.tailrec
 
 sealed trait Bencode {
   import Bencode._
@@ -53,7 +52,7 @@ object Bencode {
 
   final case class BDict(fields: Map[BString, Bencode]) extends Bencode {
 
-    def get(key: String): Option[Bencode] = fields.get(BString(key))
+    def getBencode(key: String): Option[Bencode] = fields.get(BString(key))
 
     def get[A: Decoder](key: String): Either[String, A] =
       fields
