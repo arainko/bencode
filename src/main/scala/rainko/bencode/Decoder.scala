@@ -3,6 +3,8 @@ package rainko.bencode
 import cats.instances.list._
 import cats.syntax.all._
 
+import java.time.{Instant, LocalDate, ZoneId}
+
 trait Decoder[A] { self =>
   def apply(bencode: Bencode): Either[String, A]
 
@@ -28,6 +30,12 @@ object Decoder {
     case Bencode.BList(values) => values.traverse(_.decode[A])
     case _ => Left("Not a list!")
   }
+
+  implicit val decodeInstant: Decoder[Instant] =
+    decodeInt.map(_.toLong).map(Instant.ofEpochSecond)
+
+  implicit val decodeLocalDate: Decoder[LocalDate] =
+    decodeInstant.map(LocalDate.ofInstant(_, ZoneId.systemDefault()))
 
   implicit def decodeMap[A: Decoder]: Decoder[Map[String, A]] = {
     case Bencode.BDict(fields) =>

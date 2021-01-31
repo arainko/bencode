@@ -1,5 +1,9 @@
 package rainko.bencode
 
+import rainko.bencode.cursor.Cursor
+
+import scala.collection.immutable.Queue
+
 
 sealed trait Bencode {
   import Bencode._
@@ -15,29 +19,7 @@ sealed trait Bencode {
           .mkString("d", "", "e")
     }
 
-  final def int: Option[BInt] =
-    this match {
-      case int: BInt => Some(int)
-      case _         => None
-    }
-
-  final def string: Option[BString] =
-    this match {
-      case string: BString => Some(string)
-      case _               => None
-    }
-
-  final def list: Option[BList] =
-    this match {
-      case list: BList => Some(list)
-      case _           => None
-    }
-
-  final def dict: Option[BDict] =
-    this match {
-      case dict: BDict => Some(dict)
-      case _           => None
-    }
+  final def cursor: Cursor = Cursor(this, Queue.empty)
 
   final def decode[A: Decoder]: Either[String, A] = Decoder[A].apply(this)
 }

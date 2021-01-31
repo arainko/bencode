@@ -1,52 +1,41 @@
 package rainko.bencode.cursor
 
-import rainko.bencode.cursor.Cursor.Target
-import rainko.bencode.cursor.Cursor.ListTarget
-import rainko.bencode.cursor.Cursor.ListIndexTarget
-import rainko.bencode.cursor.Cursor.IntTarget
-import rainko.bencode.cursor.Cursor.StringTarget
-import rainko.bencode.cursor.Cursor.DictTarget
-import rainko.bencode.cursor.Cursor.DictFieldTarget
+import rainko.bencode.Bencode._
+import rainko.bencode.cursor.Cursor.{DictFieldTarget, ListIndexTarget, Target}
+import rainko.bencode.{Bencode, Decoder}
+
 import scala.collection.immutable.Queue
-import rainko.bencode.Bencode
 
-final case class Cursor(targets: Queue[Target]) {
-    def list: Cursor = withNextTarget(ListTarget)
-    def list(index: Int): Cursor = withNextTarget(ListIndexTarget(index))
-    def int: Cursor = withNextTarget(IntTarget)
-    def string: Cursor = withNextTarget(StringTarget)
-    def dict: Cursor = withNextTarget(DictTarget)
-    def dict(field: String) = withNextTarget(DictFieldTarget(field))
+final case class Cursor(private val bencode: Bencode, private val targets: Queue[Target]) {
+  def list(index: Int): Cursor   = withNextTarget(ListIndexTarget(index))
+  def field(key: String): Cursor = withNextTarget(DictFieldTarget(key))
 
-    def isEmpty: Boolean = targets.isEmpty
-
-    def traverseBencode(becode: Bencode): Option[Bencode] = {
-        def helper(curr: Option[Bencode], cursor: Cursor): Option[Bencode] = 
-            if (this.isEmpty) curr
-            else helper(curr.flatMap(accessBencode))
-              
+  def focus: Option[Bencode] =
+    targets.foldLeft(Option(bencode)) { (bencode, target) =>
+      bencode.flatMap(bencode => accessBencode(bencode, target))
     }
 
-    private def accessBencode(bencode: Bencode): Option[Bencode] = this.targets.last match {
-        case IntTarget => bencode.int
-        case StringTarget => bencode.string
-        case ListTarget => bencode.list
-        case ListIndexTarget(idx) => bencode.list.flatMap(_.values.drop(idx).headOption)
-        case DictTarget => bencode.dict
-        case DictFieldTarget(field) => bencode.dict.flatMap(_.getBencode(field))
+  def focusAs[A <: Bencode: Caster]: Option[A] = focus.flatMap(Caster[A].cast)
+
+  def as[A: Decoder]: Either[String, A] =
+    focus
+      .toRight("Couldn't get to the requested field")
+      .flatMap(Decoder[A].apply)
+
+  private def accessBencode(bencode: Bencode, target: Target): Option[Bencode] =
+    target match {
+      case ListIndexTarget(idx) =>
+        Caster[BList]
+          .cast(bencode)
+          .flatMap(_.values.drop(idx).headOption)
+      case DictFieldTarget(field) => Caster[BDict].cast(bencode).flatMap(_.getBencode(field))
     }
 
-    private def withNextTarget(target: Target) = Cursor(targets.enqueue(target))
+  private def withNextTarget(target: Target) = Cursor(bencode, targets.enqueue(target))
 }
 
 object Cursor {
-
   sealed trait Target
-  case object IntTarget extends Target
-  case object StringTarget extends Target
-  case object ListTarget extends Target
-  case class ListIndexTarget(index: Int) extends Target
-  case object DictTarget extends Target
+  case class ListIndexTarget(index: Int)  extends Target
   case class DictFieldTarget(key: String) extends Target
-
 }
