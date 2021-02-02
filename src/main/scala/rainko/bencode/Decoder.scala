@@ -27,7 +27,7 @@ object Decoder {
   }
 
   implicit def decodeSeq[A: Decoder]: Decoder[Seq[A]] = {
-    case Bencode.BList(values) => values.traverse(_.decode[A])
+    case Bencode.BList(values) => values.traverse(Decoder[A].apply)
     case _ => Left("Not a list!")
   }
 
@@ -40,7 +40,7 @@ object Decoder {
   implicit def decodeMap[A: Decoder]: Decoder[Map[String, A]] = {
     case Bencode.BDict(fields) =>
       fields.values.toList
-        .traverse(_.decode[A])
+        .traverse(Decoder[A].apply)
         .map(vals => fields.keys.map(_.value).zip(vals).toMap)
     case _ => Left("Not a dict!")
   }

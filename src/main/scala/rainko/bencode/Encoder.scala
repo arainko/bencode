@@ -31,5 +31,5 @@ object Encoder {
 //      }
 
   implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] =
-    list => BList(list.map(Encoder[A].apply): _*)
+    list => Bencode.fromSequence(list.map(Encoder[A].apply))
 }

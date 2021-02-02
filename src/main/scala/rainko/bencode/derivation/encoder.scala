@@ -1,7 +1,7 @@
 package rainko.bencode.derivation
 
 import rainko.bencode.Bencode.{BDict, BString}
-import rainko.bencode.Encoder
+import rainko.bencode.{Bencode, Encoder}
 import shapeless.labelled.FieldType
 import shapeless._
 
@@ -11,7 +11,7 @@ object encoder {
     def apply(value: A): BDict
   }
 
-  implicit val hnilEncoder: BObjectEncoder[HNil] = _ => BDict()
+  implicit val hnilEncoder: BObjectEncoder[HNil] = _ => Bencode.fromFields()
 
   implicit val cnilEncoder: BObjectEncoder[CNil] = _ =>
     throw new RuntimeException("CNil is an uninhabited type and cannot be constructed!")
@@ -33,8 +33,7 @@ object encoder {
     headEncoder: Lazy[Encoder[H]],
     tailEncoder: BObjectEncoder[T]
   ): BObjectEncoder[FieldType[K, H] :+: T] = {
-    case Inl(head) =>
-      BDict(witness.value.name -> headEncoder.value.apply(head))
+    case Inl(head) => Bencode.fromFields(witness.value.name -> headEncoder.value.apply(head))
     case Inr(tail) => tailEncoder.apply(tail)
   }
 

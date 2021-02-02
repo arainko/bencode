@@ -28,7 +28,7 @@ object decoder {
   ): BObjectDecoder[FieldType[K, H] :: T] =
     (value: BDict) =>
       for {
-        head <- value.get[H](witness.value.name)(headDecoder.value)
+        head <- value.cursor.field(witness.value.name).as[H](headDecoder.value)
         tail <- tailDecoder(value)
       } yield field[K](head) :: tail
 
@@ -38,7 +38,7 @@ object decoder {
     tailDecoder: BObjectDecoder[T]
   ): BObjectDecoder[FieldType[K, H] :+: T] =
     (value: BDict) =>
-      value.get[H](witness.value.name)(headDecoder.value) match {
+      value.cursor.field(witness.value.name).as[H](headDecoder.value) match {
         case Right(value) => Right(Inl(field[K](value)))
         case Left(_)      => tailDecoder(value).map(Inr.apply)
       }

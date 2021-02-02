@@ -28,7 +28,10 @@ final case class Cursor(private val bencode: Bencode, private val targets: Queue
         Caster[BList]
           .cast(bencode)
           .flatMap(_.values.drop(idx).headOption)
-      case DictFieldTarget(field) => Caster[BDict].cast(bencode).flatMap(_.getBencode(field))
+      case DictFieldTarget(field) =>
+        Caster[BDict]
+          .cast(bencode)
+          .flatMap(_.fields.get(BString(field)))
     }
 
   private def withNextTarget(target: Target) = Cursor(bencode, targets.enqueue(target))

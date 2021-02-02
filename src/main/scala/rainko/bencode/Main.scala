@@ -1,6 +1,5 @@
 package rainko.bencode
 
-import rainko.bencode.Bencode.BString
 
 object Main extends App {
 

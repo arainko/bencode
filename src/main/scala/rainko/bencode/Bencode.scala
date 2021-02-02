@@ -1,9 +1,9 @@
 package rainko.bencode
 
+import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 
 import scala.collection.immutable.Queue
-
 
 sealed trait Bencode {
   import Bencode._
@@ -20,41 +20,26 @@ sealed trait Bencode {
     }
 
   final def cursor: Cursor = Cursor(this, Queue.empty)
-
-  final def decode[A: Decoder]: Either[String, A] = Decoder[A].apply(this)
 }
 
 object Bencode {
-  final case class BString(value: String) extends Bencode
-  final case class BInt(value: Int)       extends Bencode
+  final case class BString(value: String)       extends Bencode
+  final case class BInt(value: Int)             extends Bencode
+  final case class BList(values: List[Bencode]) extends Bencode
+  final case class BDict(fields: Map[BString, Bencode]) extends Bencode
 
-  final case class BList(values: List[Bencode]) extends Bencode {
-    override def toString: String = s"BList(${values.mkString(", ")})"
-  }
+  def fromString(string: String): BString  = BString(string)
 
-  final case class BDict(fields: Map[BString, Bencode]) extends Bencode {
+  def fromInt(int: Int): BInt = BInt(int)
 
-    def getBencode(key: String): Option[Bencode] = fields.get(BString(key))
+  def fromValues(values: Bencode*): BList  = BList(values.toList)
 
-    def get[A: Decoder](key: String): Either[String, A] =
-      fields
-        .get(BString(key))
-        .toRight(s"No key $key found!")
-        .flatMap(_.decode)
+  def fromSequence(seq: Seq[Bencode]): BList = BList(seq.toList)
 
-  }
+  def fromFields(fields: (String, Bencode)*): BDict = Bencode.fromMap(fields.toMap)
 
-  object BDict {
-
-    def apply(entries: (String, Bencode)*): BDict =
-      BDict {
-        entries.map { case (key, value) => (BString(key), value) }.toMap
-      }
-  }
-
-  object BList {
-    def apply(values: Bencode*): BList = BList(values.toList)
-  }
+  def fromMap(entries: Map[String, Bencode]): BDict =
+    BDict(entries.map { case (key, value) => (BString(key), value) })
 
   def parse(encoded: String): Option[Bencode] =
     encoded match {
@@ -94,7 +79,10 @@ object Bencode {
   }
 
   private def parseBInt(value: String) =
-    value.drop(1).takeWhile(_ != 'e').toIntOption.map(BInt)
+    value.drop(1).takeWhile(_ != 'e')
+      .toIntOption
+      .map(BInt)
+      .toRight(ParsingFailure(s"Couldn't parse BInt for input: ${value.take(15)}..."))
 
   private def parseBString(string: String) = {
     val sizePart = string.takeWhile(_ != ':')
