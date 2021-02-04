@@ -23,16 +23,16 @@ sealed trait Bencode {
 }
 
 object Bencode {
-  final case class BString(value: String)       extends Bencode
-  final case class BInt(value: Int)             extends Bencode
-  final case class BList(values: List[Bencode]) extends Bencode
+  final case class BString(value: String)               extends Bencode
+  final case class BInt(value: Int)                     extends Bencode
+  final case class BList(values: List[Bencode])         extends Bencode
   final case class BDict(fields: Map[BString, Bencode]) extends Bencode
 
-  def fromString(string: String): BString  = BString(string)
+  def fromString(string: String): BString = BString(string)
 
   def fromInt(int: Int): BInt = BInt(int)
 
-  def fromValues(values: Bencode*): BList  = BList(values.toList)
+  def fromValues(values: Bencode*): BList = BList(values.toList)
 
   def fromSequence(seq: Seq[Bencode]): BList = BList(seq.toList)
 
@@ -41,19 +41,19 @@ object Bencode {
   def fromMap(entries: Map[String, Bencode]): BDict =
     BDict(entries.map { case (key, value) => (BString(key), value) })
 
-  def parse(encoded: String): Option[Bencode] =
+  def parse(encoded: String): Either[ParsingFailure, Bencode] =
     encoded match {
       case int if int.headOption.contains('i')           => parseBInt(int)
       case string if string.headOption.exists(_.isDigit) => parseBString(string)
       case list if list.headOption.contains('l')         => parseBList(list)
       case dict if dict.headOption.contains('d')         => parseBDict(dict)
-      case _                                             => None
+      case _                                             => Left(BencodeError.parsingFailure("Bencode", encoded))
     }
 
-  private def parseBList(value: String): Option[BList] = {
-    def helper(curr: String, acc: List[Bencode]): Option[BList] =
+  private def parseBList(value: String) = {
+    def helper(curr: String, acc: List[Bencode]): Either[ParsingFailure, BList] =
       curr match {
-        case endList if endList.headOption.contains('e') => Some(BList(acc))
+        case endList if endList.headOption.contains('e') => Right(BList(acc))
         case listElem =>
           parse(listElem).flatMap { parsed =>
             val skippedLength = skipSize(parsed)
@@ -63,34 +63,38 @@ object Bencode {
     helper(value.drop(1), Nil)
   }
 
-  private def parseBDict(value: String): Option[BDict] = {
-    def helper(curr: String, acc: List[(BString, Bencode)]): Option[BDict] =
+  private def parseBDict(value: String) = {
+    def helper(curr: String, acc: List[(BString, Bencode)]): Either[ParsingFailure, BDict] =
       curr match {
         case entry if entry.headOption.exists(_.isDigit) =>
-          (for {
+          for {
             label <- parseBString(entry)
             labelSize = skipSize(label)
             value <- parse(entry.drop(labelSize))
             valueSize = skipSize(value)
-          } yield helper(entry.drop(labelSize + valueSize), acc :+ (label -> value))).flatten
-        case endDict if endDict.headOption.contains('e') => Some(BDict(acc.toMap))
+            nextField <- helper(entry.drop(labelSize + valueSize), acc :+ (label -> value))
+          } yield nextField
+        case endDict if endDict.headOption.contains('e') => Right(BDict(acc.toMap))
       }
     helper(value.drop(1), Nil)
   }
 
   private def parseBInt(value: String) =
-    value.drop(1).takeWhile(_ != 'e')
+    value
+      .drop(1)
+      .takeWhile(_ != 'e')
       .toIntOption
       .map(BInt)
-      .toRight(ParsingFailure(s"Couldn't parse BInt for input: ${value.take(15)}..."))
+      .toRight(BencodeError.parsingFailure("BInt", value))
 
   private def parseBString(string: String) = {
     val sizePart = string.takeWhile(_ != ':')
     for {
-      size <- sizePart.toIntOption
+      size <-
+        sizePart.toIntOption
+          .toRight(BencodeError.parsingFailure("BString", string))
       text = string.drop(sizePart.length + 1).take(size)
-      checkedText <- Option.when(text.length == size)(text)
-    } yield BString(checkedText)
+    } yield BString(text)
   }
 
   private def skipSize(bencode: Bencode): Int =
