@@ -45,12 +45,14 @@ object decoder {
 
   implicit def coproductAsObjectDecoder[P, C <: Coproduct](implicit
     gen: LabelledGeneric.Aux[P, C],
-    encoder: Lazy[BObjectDecoder[C]]
+    encoder: Lazy[BObjectDecoder[C]],
+    lp: LowPriority
   ): Decoder[P] = encoder.value.map(gen.from)
 
   implicit def productAsObjectDecoder[P <: Product, HL <: HList](implicit
     gen: LabelledGeneric.Aux[P, HL],
-    encoder: Lazy[BObjectDecoder[HL]]
+    encoder: Lazy[BObjectDecoder[HL]],
+    lp: LowPriority
   ): Decoder[P] = encoder.value.map(gen.from)
 
 }
