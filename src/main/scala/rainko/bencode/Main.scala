@@ -1,11 +1,6 @@
 package rainko.bencode
 
-import rainko.bencode.derivation.decoder._
-import rainko.bencode.Bencode.BDict
-import scala.io.Source
-import scala.io.Codec
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 
 final case class Info(length: Int, name: String, `piece length`: Int)
 final case class TorrentFile(
@@ -18,7 +13,7 @@ final case class TorrentFile(
 
 object Main extends App {
 
-  val file = Files.readAllBytes(
+  val file: Array[Byte] = Files.readAllBytes(
     Paths.get(
       "/home/aleksander/IdeaProjects/bencode/src/main/resources/debian.torrent"
     )

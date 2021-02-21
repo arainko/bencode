@@ -1,9 +1,8 @@
 package rainko.bencode.parser
 
 import rainko.bencode.Bencode._
-import rainko.bencode.Bencode
 import rainko.bencode.BencodeError.ParsingFailure
-import rainko.bencode.BencodeError
+import rainko.bencode.{Bencode, BencodeError}
 
 private[bencode] object StringParser extends Parser[String] {
 
@@ -12,7 +11,7 @@ private[bencode] object StringParser extends Parser[String] {
   override def matchBList(value: String): Boolean   = value.headOption.contains('l')
   override def matchBDict(value: String): Boolean   = value.headOption.contains('d')
 
-  def parseBList(value: String) = {
+  def parseBList(value: String): Either[ParsingFailure,BList] = {
     def helper(curr: String, acc: List[Bencode]): Either[ParsingFailure, BList] =
       curr match {
         case endList if endList.headOption.contains('e') => Right(BList(acc))
@@ -25,7 +24,7 @@ private[bencode] object StringParser extends Parser[String] {
     helper(value.drop(1), Nil)
   }
 
-  def parseBDict(value: String) = {
+  def parseBDict(value: String): Either[ParsingFailure,BDict] = {
     def helper(curr: String, acc: List[(BString, Bencode)]): Either[ParsingFailure, BDict] =
       curr match {
         case entry if entry.headOption.exists(_.isDigit) =>
@@ -42,7 +41,7 @@ private[bencode] object StringParser extends Parser[String] {
     helper(value.drop(1), Nil)
   }
 
-  def parseBInt(value: String) =
+  def parseBInt(value: String): Either[ParsingFailure,BInt] =
     value
       .drop(1)
       .takeWhile(_ != 'e')
@@ -50,7 +49,7 @@ private[bencode] object StringParser extends Parser[String] {
       .map(BInt)
       .toRight(BencodeError.parsingFailure("BInt", value))
 
-  def parseBString(string: String) = {
+  def parseBString(string: String): Either[ParsingFailure,BString] = {
     val sizePart = string.takeWhile(_ != ':')
     for {
       size <-

@@ -1,7 +1,7 @@
 package rainko.bencode.cursor
 
 import rainko.bencode.Bencode
-import rainko.bencode.Bencode.{BDict, BInt, BList, BString}
+import rainko.bencode.Bencode._
 
 private[cursor] trait Caster[A <: Bencode] {
   def cast(bencode: Bencode): Option[A]

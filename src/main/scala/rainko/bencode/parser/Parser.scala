@@ -1,8 +1,7 @@
 package rainko.bencode.parser
 
-import rainko.bencode.Bencode
-import rainko.bencode.BencodeError
 import rainko.bencode.Bencode._
+import rainko.bencode.{Bencode, BencodeError}
 
 abstract private[bencode] class Parser[A] {
   def matchBInt(value: A): Boolean

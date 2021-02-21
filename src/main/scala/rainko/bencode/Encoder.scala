@@ -1,6 +1,6 @@
 package rainko.bencode
 
-import Bencode._
+import rainko.bencode.Bencode._
 
 trait Encoder[A] { self =>
   def apply(value: A): Bencode

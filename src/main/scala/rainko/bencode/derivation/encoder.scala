@@ -2,8 +2,8 @@ package rainko.bencode.derivation
 
 import rainko.bencode.Bencode.{BDict, BString}
 import rainko.bencode.{Bencode, Encoder}
-import shapeless.labelled.FieldType
 import shapeless._
+import shapeless.labelled.FieldType
 
 object encoder {
 

@@ -2,13 +2,9 @@ package rainko.bencode
 
 import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
+import rainko.bencode.parser._
 
 import scala.collection.immutable.Queue
-import rainko.bencode.Bencode.BDict
-import rainko.bencode.Bencode.BString
-import rainko.bencode.Bencode.BInt
-import rainko.bencode.Bencode.BList
-import rainko.bencode.parser._
 
 sealed trait Bencode {
   import Bencode._
