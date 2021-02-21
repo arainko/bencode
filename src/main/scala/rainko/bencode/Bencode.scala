@@ -4,6 +4,11 @@ import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 
 import scala.collection.immutable.Queue
+import rainko.bencode.Bencode.BDict
+import rainko.bencode.Bencode.BString
+import rainko.bencode.Bencode.BInt
+import rainko.bencode.Bencode.BList
+import rainko.bencode.parser._
 
 sealed trait Bencode {
   import Bencode._
@@ -18,6 +23,25 @@ sealed trait Bencode {
           .map { case (key, value) => s"${key.stringify}${value.stringify}" }
           .mkString("d", "", "e")
     }
+
+  final def prettyStringify: String = {
+    def withIndent(level: Int, bencode: Bencode): String =
+      bencode match {
+        case string @ BString(value) => "  " + string.stringify
+        case int @ BInt(value)       => "  " + int.stringify
+        case list @ BList(values) =>
+          values
+            .map(v => withIndent(level + 1, v))
+            .mkString(s"\n${"  " * level}l\n", "\n", s"\n${"  " * level}e")
+        case dict @ BDict(fields) =>
+          fields
+            .map { case (key, value) =>
+              s"${"  " * level}${key.stringify}${withIndent(level + 1, value)}"
+            }
+            .mkString(s"\n${"  " * level}d\n", "\n", s"\n${"  " * level}e")
+      }
+    withIndent(0, this)
+  }
 
   final def cursor: Cursor = Cursor(this, Queue.empty)
 }
@@ -38,71 +62,8 @@ object Bencode {
 
   def fromFields(fields: (String, Bencode)*): BDict = Bencode.fromMap(fields.toMap)
 
-  def fromMap(entries: Map[String, Bencode]): BDict =
-    BDict(entries.map { case (key, value) => (BString(key), value) })
+  def fromMap(entries: Map[String, Bencode]): BDict = BDict(entries.map { case (key, value) => (BString(key), value) })
 
-  def parse(encoded: String): Either[ParsingFailure, Bencode] =
-    encoded match {
-      case int if int.headOption.contains('i')           => parseBInt(int)
-      case string if string.headOption.exists(_.isDigit) => parseBString(string)
-      case list if list.headOption.contains('l')         => parseBList(list)
-      case dict if dict.headOption.contains('d')         => parseBDict(dict)
-      case _                                             => Left(BencodeError.parsingFailure("Bencode", encoded))
-    }
-
-  private def parseBList(value: String) = {
-    def helper(curr: String, acc: List[Bencode]): Either[ParsingFailure, BList] =
-      curr match {
-        case endList if endList.headOption.contains('e') => Right(BList(acc))
-        case listElem =>
-          parse(listElem).flatMap { parsed =>
-            val skippedLength = skipSize(parsed)
-            helper(curr.drop(skippedLength), acc :+ parsed)
-          }
-      }
-    helper(value.drop(1), Nil)
-  }
-
-  private def parseBDict(value: String) = {
-    def helper(curr: String, acc: List[(BString, Bencode)]): Either[ParsingFailure, BDict] =
-      curr match {
-        case entry if entry.headOption.exists(_.isDigit) =>
-          for {
-            label <- parseBString(entry)
-            labelSize = skipSize(label)
-            value <- parse(entry.drop(labelSize))
-            valueSize = skipSize(value)
-            nextField <- helper(entry.drop(labelSize + valueSize), acc :+ (label -> value))
-          } yield nextField
-        case endDict if endDict.headOption.contains('e') => Right(BDict(acc.toMap))
-      }
-    helper(value.drop(1), Nil)
-  }
-
-  private def parseBInt(value: String) =
-    value
-      .drop(1)
-      .takeWhile(_ != 'e')
-      .toIntOption
-      .map(BInt)
-      .toRight(BencodeError.parsingFailure("BInt", value))
-
-  private def parseBString(string: String) = {
-    val sizePart = string.takeWhile(_ != ':')
-    for {
-      size <-
-        sizePart.toIntOption
-          .toRight(BencodeError.parsingFailure("BString", string))
-      text = string.drop(sizePart.length + 1).take(size)
-    } yield BString(text)
-  }
-
-  private def skipSize(bencode: Bencode): Int =
-    bencode match {
-      case BString(value) => value.length + value.length.toString.length + 1
-      case BInt(value)    => value.toString.length + 2
-      case BList(values)  => values.foldLeft(0)((acc, curr) => acc + skipSize(curr)) + 2
-      case BDict(value)   => value.foldLeft(0)((acc, curr) => acc + skipSize(curr._1) + skipSize(curr._2)) + 2
-    }
+  def parse(encoded: String): Either[ParsingFailure, Bencode] = StringParser.parse(encoded)
 
 }
