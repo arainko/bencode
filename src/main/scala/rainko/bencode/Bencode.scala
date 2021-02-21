@@ -3,6 +3,7 @@ package rainko.bencode
 import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 import rainko.bencode.parser._
+import syntax._
 
 import scala.collection.immutable.Queue
 
@@ -11,12 +12,12 @@ sealed trait Bencode {
 
   final def stringify: String =
     this match {
-      case BString(value) => s"${value.length}:$value"
+      case BString(value) => s"${value.length}:${value.utf8String}"
       case BInt(value)    => s"i${value}e"
       case BList(values)  => s"l${values.map(_.stringify).mkString}e"
       case BDict(values) =>
         values
-          .map { case (key, value) => s"${key.stringify}${value.stringify}" }
+          .map { case (key, value) => s"${key.length}:${key}${value.stringify}" }
           .mkString("d", "", "e")
     }
 
@@ -32,7 +33,7 @@ sealed trait Bencode {
         case dict @ BDict(fields) =>
           fields
             .map { case (key, value) =>
-              s"${"  " * level}${key.stringify}${withIndent(level + 1, value)}"
+              s"${"  " * level}${key.length}:${key}${withIndent(level + 1, value)}"
             }
             .mkString(s"\n${"  " * level}d\n", "\n", s"\n${"  " * level}e")
       }
@@ -43,12 +44,12 @@ sealed trait Bencode {
 }
 
 object Bencode {
-  final case class BString(value: String)               extends Bencode
+  final case class BString(value: Array[Byte])          extends Bencode
   final case class BInt(value: Int)                     extends Bencode
   final case class BList(values: List[Bencode])         extends Bencode
-  final case class BDict(fields: Map[BString, Bencode]) extends Bencode
+  final case class BDict(fields: Map[String, Bencode]) extends Bencode
 
-  def fromString(string: String): BString = BString(string)
+  def fromString(string: String): BString = BString(string.getBytes)
 
   def fromInt(int: Int): BInt = BInt(int)
 
@@ -58,7 +59,7 @@ object Bencode {
 
   def fromFields(fields: (String, Bencode)*): BDict = Bencode.fromMap(fields.toMap)
 
-  def fromMap(entries: Map[String, Bencode]): BDict = BDict(entries.map { case (key, value) => (BString(key), value) })
+  def fromMap(entries: Map[String, Bencode]): BDict = BDict(entries)
 
   def parse(encoded: String): Either[ParsingFailure, Bencode] = StringParser.parse(encoded)
 

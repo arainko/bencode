@@ -25,12 +25,12 @@ private[bencode] object StringParser extends Parser[String] {
   }
 
   def parseBDict(value: String): Either[ParsingFailure,BDict] = {
-    def helper(curr: String, acc: List[(BString, Bencode)]): Either[ParsingFailure, BDict] =
+    def helper(curr: String, acc: List[(String, Bencode)]): Either[ParsingFailure, BDict] =
       curr match {
         case entry if entry.headOption.exists(_.isDigit) =>
           for {
-            label <- parseBString(entry)
-            labelSize = skipSize(label)
+            label <- parseLabel(entry)
+            labelSize = labelSkipSize(label)
             value <- parse(entry.drop(labelSize))
             valueSize = skipSize(value)
             nextField <- helper(entry.drop(labelSize + valueSize), acc :+ (label -> value))
@@ -56,7 +56,7 @@ private[bencode] object StringParser extends Parser[String] {
         sizePart.toIntOption
           .toRight(BencodeError.parsingFailure("BString", string))
       text = string.drop(sizePart.length + 1).take(size)
-    } yield BString(text)
+    } yield BString(text.getBytes)
   }
 
   def skipSize(bencode: Bencode): Int =
@@ -64,7 +64,19 @@ private[bencode] object StringParser extends Parser[String] {
       case BString(value) => value.length + value.length.toString.length + 1
       case BInt(value)    => value.toString.length + 2
       case BList(values)  => values.foldLeft(0)((acc, curr) => acc + skipSize(curr)) + 2
-      case BDict(value)   => value.foldLeft(0)((acc, curr) => acc + skipSize(curr._1) + skipSize(curr._2)) + 2
+      case BDict(value)   => value.foldLeft(0)((acc, curr) => acc + labelSkipSize(curr._1) + skipSize(curr._2)) + 2
     }
+
+  def parseLabel(string: String): Either[ParsingFailure, String] = {
+    val sizePart = string.takeWhile(_ != ':')
+    for {
+      size <-
+        sizePart.toIntOption
+          .toRight(BencodeError.parsingFailure("BString", string))
+      text = string.drop(sizePart.length + 1).take(size)
+    } yield text
+  }
+
+  def labelSkipSize(label: String): Int = label.length.toString.size + label.length + 1
 
 }

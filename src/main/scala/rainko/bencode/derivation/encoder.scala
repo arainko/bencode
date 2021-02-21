@@ -25,7 +25,7 @@ object encoder {
       val label       = witness.value.name
       val encodedHead = headEncoder.value.apply(hlist.head)
       val encodedTail = tailEncoder.apply(hlist.tail)
-      BDict(encodedTail.fields + (BString(label) -> encodedHead))
+      BDict(encodedTail.fields + (label -> encodedHead))
     }
 
   implicit def coproductObjectEncoder[K <: Symbol, H, T <: Coproduct](implicit

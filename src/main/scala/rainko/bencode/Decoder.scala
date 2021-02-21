@@ -2,6 +2,7 @@ package rainko.bencode
 
 import cats.instances.list._
 import cats.syntax.all._
+import syntax._
 
 import java.time.{Instant, LocalDate, ZoneId}
 
@@ -17,7 +18,7 @@ object Decoder {
   def apply[A: Decoder]: Decoder[A] = implicitly
 
   implicit val decodeString: Decoder[String] = {
-    case Bencode.BString(value) => Right(value)
+    case Bencode.BString(value) => Right(value.utf8String)
     case _ => Left("Not a string!")
   }
 
@@ -37,11 +38,4 @@ object Decoder {
   implicit val decodeLocalDate: Decoder[LocalDate] =
     decodeInstant.map(LocalDate.ofInstant(_, ZoneId.systemDefault()))
 
-  implicit def decodeMap[A: Decoder]: Decoder[Map[String, A]] = {
-    case Bencode.BDict(fields) =>
-      fields.values.toList
-        .traverse(Decoder[A].apply)
-        .map(vals => fields.keys.map(_.value).zip(vals).toMap)
-    case _ => Left("Not a dict!")
-  }
 }

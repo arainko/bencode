@@ -11,7 +11,7 @@ trait Encoder[A] { self =>
 object Encoder {
   def apply[A: Encoder]: Encoder[A] = implicitly
 
-  implicit val stringEncoder: Encoder[String] = BString(_)
+  implicit val stringEncoder: Encoder[String] = string => BString(string.getBytes)
 
   implicit val intEncoder: Encoder[Int] = BInt(_)
 
