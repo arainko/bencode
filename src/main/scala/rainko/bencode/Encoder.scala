@@ -1,6 +1,7 @@
 package rainko.bencode
 
 import rainko.bencode.Bencode._
+import rainko.bencode.syntax._
 
 trait Encoder[A] { self =>
   def apply(value: A): Bencode
@@ -11,7 +12,7 @@ trait Encoder[A] { self =>
 object Encoder {
   def apply[A: Encoder]: Encoder[A] = implicitly
 
-  implicit val stringEncoder: Encoder[String] = string => BString(string.getBytes)
+  implicit val stringEncoder: Encoder[String] = string => BString(string.getBytes.toByteVector)
 
   implicit val intEncoder: Encoder[Int] = BInt(_)
 

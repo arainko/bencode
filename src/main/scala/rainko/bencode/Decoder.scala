@@ -2,7 +2,7 @@ package rainko.bencode
 
 import cats.instances.list._
 import cats.syntax.all._
-import syntax._
+import rainko.bencode.syntax._
 
 import java.time.{Instant, LocalDate, ZoneId}
 
@@ -18,7 +18,7 @@ object Decoder {
   def apply[A: Decoder]: Decoder[A] = implicitly
 
   implicit val decodeString: Decoder[String] = {
-    case Bencode.BString(value) => Right(value.utf8String)
+    case Bencode.BString(value) => Right(value.toArray.utf8String)
     case _ => Left("Not a string!")
   }
 

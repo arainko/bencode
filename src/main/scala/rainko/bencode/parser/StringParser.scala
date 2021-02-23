@@ -3,6 +3,7 @@ package rainko.bencode.parser
 import rainko.bencode.Bencode._
 import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.{Bencode, BencodeError}
+import rainko.bencode.syntax._
 
 private[bencode] object StringParser extends Parser[String] {
 
@@ -56,12 +57,12 @@ private[bencode] object StringParser extends Parser[String] {
         sizePart.toIntOption
           .toRight(BencodeError.parsingFailure("BString", string))
       text = string.drop(sizePart.length + 1).take(size)
-    } yield BString(text.getBytes)
+    } yield BString(text.getBytes.toByteVector)
   }
 
   def skipSize(bencode: Bencode): Int =
     bencode match {
-      case BString(value) => value.length + value.length.toString.length + 1
+      case BString(value) => value.length.toInt + value.length.toString.length + 1
       case BInt(value)    => value.toString.length + 2
       case BList(values)  => values.foldLeft(0)((acc, curr) => acc + skipSize(curr)) + 2
       case BDict(value)   => value.foldLeft(0)((acc, curr) => acc + labelSkipSize(curr._1) + skipSize(curr._2)) + 2

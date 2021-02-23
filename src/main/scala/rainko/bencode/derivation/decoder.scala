@@ -4,6 +4,7 @@ import rainko.bencode.Bencode.BDict
 import rainko.bencode.{Bencode, Decoder}
 import shapeless._
 import shapeless.labelled.{FieldType, field}
+import scala.annotation.nowarn
 
 object decoder {
 
@@ -46,13 +47,13 @@ object decoder {
   implicit def coproductAsObjectDecoder[P, C <: Coproduct](implicit
     gen: LabelledGeneric.Aux[P, C],
     encoder: Lazy[BObjectDecoder[C]],
-    lp: LowPriority
+    @nowarn lp: LowPriority
   ): Decoder[P] = encoder.value.map(gen.from)
 
   implicit def productAsObjectDecoder[P <: Product, HL <: HList](implicit
     gen: LabelledGeneric.Aux[P, HL],
     encoder: Lazy[BObjectDecoder[HL]],
-    lp: LowPriority
+    @nowarn lp: LowPriority
   ): Decoder[P] = encoder.value.map(gen.from)
 
 }

@@ -3,16 +3,17 @@ package rainko.bencode
 import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 import rainko.bencode.parser._
-import syntax._
+import rainko.bencode.syntax._
 
 import scala.collection.immutable.Queue
+import scodec.bits.ByteVector
 
 sealed trait Bencode {
   import Bencode._
 
   final def stringify: String =
     this match {
-      case BString(value) => s"${value.length}:${value.utf8String}"
+      case BString(value) => s"${value.length}:${value.toArray.utf8String}"
       case BInt(value)    => s"i${value}e"
       case BList(values)  => s"l${values.map(_.stringify).mkString}e"
       case BDict(values) =>
@@ -24,13 +25,13 @@ sealed trait Bencode {
   final def prettyStringify: String = {
     def withIndent(level: Int, bencode: Bencode): String =
       bencode match {
-        case string @ BString(value) => "  " + string.stringify
-        case int @ BInt(value)       => "  " + int.stringify
-        case list @ BList(values) =>
+        case string @ BString(_) => "  " + string.stringify
+        case int @ BInt(_)       => "  " + int.stringify
+        case BList(values) =>
           values
             .map(v => withIndent(level + 1, v))
             .mkString(s"\n${"  " * level}l\n", "\n", s"\n${"  " * level}e")
-        case dict @ BDict(fields) =>
+        case BDict(fields) =>
           fields
             .map { case (key, value) =>
               s"${"  " * level}${key.length}:${key}${withIndent(level + 1, value)}"
@@ -44,12 +45,12 @@ sealed trait Bencode {
 }
 
 object Bencode {
-  final case class BString(value: Array[Byte])          extends Bencode
-  final case class BInt(value: Int)                     extends Bencode
-  final case class BList(values: List[Bencode])         extends Bencode
+  final case class BString(value: ByteVector)         extends Bencode
+  final case class BInt(value: Int)                    extends Bencode
+  final case class BList(values: List[Bencode])        extends Bencode
   final case class BDict(fields: Map[String, Bencode]) extends Bencode
 
-  def fromString(string: String): BString = BString(string.getBytes)
+  def fromString(string: String): BString = BString(string.getBytes.toByteVector)
 
   def fromInt(int: Int): BInt = BInt(int)
 

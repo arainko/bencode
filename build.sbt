@@ -13,6 +13,7 @@ lazy val bencode = (project in file("."))
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core"         % "2.3.1",
       "com.chuusai"    % "shapeless_2.13"    % "2.4.0-M1",
+      "org.scodec"    %% "scodec-bits"       % "1.1.23",
       "dev.zio"       %% "zio"               % zioVersion,
       "dev.zio"       %% "zio-test"          % zioVersion % "test",
       "dev.zio"       %% "zio-test-sbt"      % zioVersion % "test",
