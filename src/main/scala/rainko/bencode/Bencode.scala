@@ -45,14 +45,14 @@ sealed trait Bencode {
 }
 
 object Bencode {
-  final case class BString(value: ByteVector)         extends Bencode
-  final case class BInt(value: Int)                    extends Bencode
+  final case class BString(value: ByteVector)          extends Bencode
+  final case class BInt(value: Long)                   extends Bencode
   final case class BList(values: List[Bencode])        extends Bencode
   final case class BDict(fields: Map[String, Bencode]) extends Bencode
 
   def fromString(string: String): BString = BString(string.getBytes.toByteVector)
 
-  def fromInt(int: Int): BInt = BInt(int)
+  def fromInt(int: Int): BInt = BInt(int.toLong)
 
   def fromValues(values: Bencode*): BList = BList(values.toList)
 

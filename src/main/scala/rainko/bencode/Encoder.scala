@@ -10,11 +10,16 @@ trait Encoder[A] { self =>
 }
 
 object Encoder {
+
+  trait AsObject[A] extends Encoder[A] {
+    def apply(value: A): BDict
+  }
+
   def apply[A: Encoder]: Encoder[A] = implicitly
 
   implicit val stringEncoder: Encoder[String] = string => BString(string.getBytes.toByteVector)
 
-  implicit val intEncoder: Encoder[Int] = BInt(_)
+  implicit val intEncoder: Encoder[Int] = int => BInt(int.toLong)
 
   implicit val longEncoder: Encoder[Long] = intEncoder.contramap(_.intValue)
 
@@ -31,6 +36,5 @@ object Encoder {
 //        }
 //      }
 
-  implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] =
-    list => Bencode.fromSequence(list.map(Encoder[A].apply))
+  implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] = list => Bencode.fromSequence(list.map(Encoder[A].apply))
 }

@@ -46,7 +46,7 @@ private[bencode] object StringParser extends Parser[String] {
     value
       .drop(1)
       .takeWhile(_ != 'e')
-      .toIntOption
+      .toLongOption
       .map(BInt)
       .toRight(BencodeError.parsingFailure("BInt", value))
 
@@ -73,7 +73,7 @@ private[bencode] object StringParser extends Parser[String] {
     for {
       size <-
         sizePart.toIntOption
-          .toRight(BencodeError.parsingFailure("BString", string))
+          .toRight(BencodeError.parsingFailure("Label", string))
       text = string.drop(sizePart.length + 1).take(size)
     } yield text
   }
