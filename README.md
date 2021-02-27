@@ -57,7 +57,7 @@ and a structure of case classes:
   )
 ```
 
-We can parse the .torrent file almost boilerplate free just this:
+We can parse the .torrent file almost boilerplate free:
 
 ```
  private val torrentFilePath = Paths.get(
