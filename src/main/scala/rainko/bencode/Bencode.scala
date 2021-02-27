@@ -7,13 +7,14 @@ import rainko.bencode.syntax._
 
 import scala.collection.immutable.Queue
 import scodec.bits.ByteVector
+import java.nio.charset.Charset
 
 sealed trait Bencode {
   import Bencode._
 
   final def stringify: String =
     this match {
-      case BString(value) => s"${value.length}:${value.toArray.utf8String}"
+      case BString(value) => s"${value.length}:${value.toArray.stringUsingCharset(Charset.defaultCharset)}"
       case BInt(value)    => s"i${value}e"
       case BList(values)  => s"l${values.map(_.stringify).mkString}e"
       case BDict(values) =>
@@ -62,6 +63,12 @@ object Bencode {
 
   def fromMap(entries: Map[String, Bencode]): BDict = BDict(entries)
 
-  def parse(encoded: String): Either[ParsingFailure, Bencode] = StringParser.parse(encoded)
+  def parse(encoded: String): Either[ParsingFailure, Bencode] = ByteParser.default.parse(encoded.getBytes.toByteVector)
+
+  def parse(encoded: ByteVector): Either[ParsingFailure, Bencode]      = ByteParser.default.parse(encoded)
+  def parseUsingCharset(encoded: ByteVector, charset: StandardCharset) = ByteParser(charset).parse(encoded)
+
+  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset) =
+    ByteParser.fromJavaCharset(charset).parse(encoded)
 
 }

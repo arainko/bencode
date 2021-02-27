@@ -18,42 +18,20 @@ object ByteParserTest extends DefaultRunnableSpec {
           .parseWithCharset(StandardCharsets.UTF_8)
           .map(string => string.drop(1).dropRight(1).toLong)
           .map(Bencode.BInt)
-        val parsed = ByteParser.parseBInt(bint)
+        val parsed = Bencode.parse(bint)
         assert(parsed)(equalTo(expectedParsed))
       }
     },
     testM("parse BString") {
       check(bstringByteGen) { bstring =>
-        val parsed = ByteParser.parseBString(bstring)
+        val parsed = Bencode.parse(bstring)
         assert(parsed)(isRight)
       }
     }
   )
 
-  private val matcherSuite = suite("Byte Parser matchers should")(
-    testM("match BInt") {
-      check(bintByteGen) { bint =>
-        val matchResult = ByteParser.matchBInt(bint)
-        assert(matchResult)(isTrue)
-      }
-    },
-    testM("match BString") {
-      check(bstringByteGen) { bstring =>
-        val matchResult = ByteParser.matchBString(bstring)
-        assert(matchResult)(isTrue)
-      }
-    }
-    // test("match BInt") {
-    //   val bint = "i12345e".getBytes.toByteVector
-    //   val matchResult = ByteParser.matchBInt(bint)
-    //   assert(matchResult)(isTrue)
-    // },
-    // test("match ")
-  )
-
   def spec: ZSpec[Environment, Failure] =
     suite("Byte Parser suite")(
-      matcherSuite,
       parserSuite
     )
 

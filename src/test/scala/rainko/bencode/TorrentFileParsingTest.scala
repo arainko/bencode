@@ -6,7 +6,6 @@ import rainko.bencode.syntax._
 import java.nio.file.Files
 import java.nio.file.Paths
 import rainko.bencode.derivation.auto._
-import rainko.bencode.parser.ByteParser
 import scodec.bits.ByteVector
 
 object TorrentFileParsingTest extends DefaultRunnableSpec {
@@ -29,7 +28,7 @@ object TorrentFileParsingTest extends DefaultRunnableSpec {
 
   def spec: ZSpec[Environment, Failure] =
     test("should parse torrent file") {
-      val parsed = ByteParser.parse(torrentFile)
+      val parsed = Bencode.parse(torrentFile)
 
       implicit val decoder = Decoder[TorrentFile].withFieldsRenamed {
         case "created by"    => "createdBy"
@@ -39,7 +38,6 @@ object TorrentFileParsingTest extends DefaultRunnableSpec {
       }
 
       val decoded = parsed.flatMap(_.cursor.as[TorrentFile])
-      println(decoded)
       assert(parsed)(isRight)
     }
 }

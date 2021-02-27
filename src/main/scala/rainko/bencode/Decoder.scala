@@ -78,7 +78,7 @@ object Decoder {
   private def deepRenameFields(bdict: BDict, f: PartialFunction[String, String]): BDict = {
     val deepTransformed = bdict.fields.map { case (field, value) =>
       f.applyOrElse(field, identity[String]) -> (value match {
-        case deepBDict @ BDict(_) => deepTransformFields(deepBDict, f)
+        case deepBDict @ BDict(_) => deepRenameFields(deepBDict, f)
         case bencode              => bencode
       })
     }
