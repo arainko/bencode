@@ -1,38 +1,85 @@
 package rainko.bencode.parser
 
+import zio._
 import zio.test._
+import zio.test.magnolia._
 import zio.test.Assertion._
 import rainko.bencode.syntax._
 import java.nio.charset.StandardCharsets
+import rainko.bencode.Bencode._
 import rainko.bencode.Bencode
+import scodec.bits.ByteVector
+import java.nio.charset.Charset
+import java.nio.charset.CharsetDecoder
 
 object ByteParserTest extends DefaultRunnableSpec {
 
-  private val bintByteGen    = Gen.anyInt.map(int => s"i${int}e").map(_.getBytes.toByteVector)
-  private val bstringByteGen = Gen.anyString.map(string => s"${string.length}:$string").map(_.getBytes.toByteVector)
+  private val charsetGen = DeriveGen[StandardCharset]
 
-  private val parserSuite = suite("Byte Parser parsers should")(
+  private val allCharsetGen = Gen.setOfN(6)(charsetGen)
+
+  private val bintGen =
+    Gen.anyLong.map(BInt)
+
+  private def bstringGen(charset: Charset) =
+    Gen.anyString
+      .map(_.bytesWithCharset(charset).toByteVector)
+      .map(BString)
+
+  private def blistGen[R](bencodeGen: Gen[R, Bencode]) = Gen.listOf(bencodeGen).map(BList)
+
+  private def bdictGen[R](bencodeGen: Gen[R, Bencode]) = Gen.mapOf(Gen.anyASCIIString, bencodeGen).map(BDict)
+
+  private def bencodeGen[R](charset: Charset = Charset.defaultCharset) = {
+    val atomicBencodeGen = Gen.oneOf(bintGen, bstringGen(charset))
+    val bencodeGen       = Gen.oneOf(atomicBencodeGen, blistGen(atomicBencodeGen), bdictGen(atomicBencodeGen))
+    val listGen = blistGen(bencodeGen)
+    val dictGen = bdictGen(Gen.oneOf(bencodeGen, atomicBencodeGen, listGen))
+    Gen.oneOf(atomicBencodeGen, bencodeGen, listGen, dictGen)
+  }
+
+  private val defaultCharsetParserSuite = suite("Byte Parser parsers should")(
     testM("parse BInt") {
-      check(bintByteGen) { bint =>
-        val expectedParsed = bint
-          .parseWithCharset(StandardCharsets.UTF_8)
-          .map(string => string.drop(1).dropRight(1).toLong)
-          .map(Bencode.BInt)
-        val parsed = Bencode.parse(bint)
-        assert(parsed)(equalTo(expectedParsed))
+      check(bintGen) { int =>
+        val stringified = int.stringify
+          .bytesWithCharset(Charset.defaultCharset)
+          .toByteVector
+        val parsed = Bencode.parse(stringified)
+        assert(parsed)(isRight(equalTo(int)))
       }
     },
     testM("parse BString") {
-      check(bstringByteGen) { bstring =>
-        val parsed = Bencode.parse(bstring)
-        assert(parsed)(isRight)
+      check(bstringGen(Charset.defaultCharset)) { bstring =>
+        val sringified = bstring.stringify
+          .bytesWithCharset(Charset.defaultCharset)
+          .toByteVector
+        val parsed = Bencode.parse(sringified)
+        assert(parsed)(isRight(equalTo(bstring)))
+      }
+    },
+    testM("parse BList") {
+      check(blistGen(bencodeGen())) { blist =>
+        val sringified = blist.stringify
+          .bytesWithCharset(Charset.defaultCharset)
+          .toByteVector
+        val parsed = Bencode.parse(sringified)
+        assert(parsed)(isRight(equalTo(blist)))
+      }
+    },
+    testM("parse BDict") {
+      check(bdictGen(bencodeGen())) { bdict =>
+        val sringified = bdict.stringify
+          .bytesWithCharset(Charset.defaultCharset)
+          .toByteVector
+        val parsed = Bencode.parse(sringified)
+        assert(parsed)(isRight(equalTo(bdict)))
       }
     }
   )
 
   def spec: ZSpec[Environment, Failure] =
     suite("Byte Parser suite")(
-      parserSuite
+      defaultCharsetParserSuite
     )
 
 }
