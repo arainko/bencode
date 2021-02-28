@@ -12,14 +12,18 @@ import java.nio.charset.Charset
 sealed trait Bencode {
   import Bencode._
 
-  final def stringify: String =
+  final def stringify: String = this.stringifyUsingCharset(Charset.defaultCharset)
+
+  final def stringifyUsingCharset(charset: StandardCharset): String = this.stringifyUsingCharset(charset.underlying)
+
+  final def stringifyUsingCharset(charset: Charset): String =
     this match {
-      case BString(value) => s"${value.length}:${value.toArray.stringUsingCharset(Charset.defaultCharset)}"
+      case BString(value) => s"${value.length}:${value.toArray.stringUsingCharset(charset)}"
       case BInt(value)    => s"i${value}e"
-      case BList(values)  => s"l${values.map(_.stringify).mkString}e"
+      case BList(values)  => s"l${values.map(_.stringifyUsingCharset(charset)).mkString}e"
       case BDict(values) =>
         values
-          .map { case (key, value) => s"${key.length}:${key}${value.stringify}" }
+          .map { case (key, value) => s"${key.length}:${key}${value.stringifyUsingCharset(charset)}" }
           .mkString("d", "", "e")
     }
 
@@ -68,7 +72,6 @@ object Bencode {
   def parse(encoded: ByteVector): Either[ParsingFailure, Bencode]      = ByteParser.default.parse(encoded)
   def parseUsingCharset(encoded: ByteVector, charset: StandardCharset) = ByteParser(charset).parse(encoded)
 
-  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset) =
-    ByteParser.fromJavaCharset(charset).parse(encoded)
+  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset) = ByteParser.fromJavaCharset(charset).parse(encoded)
 
 }
