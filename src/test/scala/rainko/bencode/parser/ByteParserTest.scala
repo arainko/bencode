@@ -1,16 +1,13 @@
 package rainko.bencode.parser
 
-import zio._
+import rainko.bencode.Bencode
+import rainko.bencode.Bencode._
+import rainko.bencode.syntax._
+import zio.test.Assertion._
 import zio.test._
 import zio.test.magnolia._
-import zio.test.Assertion._
-import rainko.bencode.syntax._
-import java.nio.charset.StandardCharsets
-import rainko.bencode.Bencode._
-import rainko.bencode.Bencode
-import scodec.bits.ByteVector
+
 import java.nio.charset.Charset
-import java.nio.charset.CharsetDecoder
 
 object ByteParserTest extends DefaultRunnableSpec {
 
