@@ -13,7 +13,7 @@ object ByteParserTest extends DefaultRunnableSpec {
 
   private val charsetGen = DeriveGen[StandardCharset]
 
-  private val allCharsetGen = Gen.setOfN(6)(charsetGen)
+  Gen.setOfN(6)(charsetGen)
 
   private val bintGen =
     Gen.anyLong.map(BInt)

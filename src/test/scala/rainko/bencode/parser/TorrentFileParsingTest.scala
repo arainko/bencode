@@ -1,12 +1,13 @@
-package rainko.bencode
+package rainko.bencode.parser
 
-import zio.test._
-import zio.test.Assertion._
-import rainko.bencode.syntax._
-import java.nio.file.Files
-import java.nio.file.Paths
 import rainko.bencode.derivation.auto._
+import rainko.bencode.syntax._
+import rainko.bencode.{Bencode, Decoder}
 import scodec.bits.ByteVector
+import zio.test.Assertion._
+import zio.test._
+
+import java.nio.file.{Files, Paths}
 
 object TorrentFileParsingTest extends DefaultRunnableSpec {
 
@@ -37,7 +38,7 @@ object TorrentFileParsingTest extends DefaultRunnableSpec {
         case "piece length"  => "pieceLength"
       }
 
-      val decoded = parsed.flatMap(_.cursor.as[TorrentFile])
+      parsed.flatMap(_.cursor.as[TorrentFile])
       assert(parsed)(isRight)
     }
 }

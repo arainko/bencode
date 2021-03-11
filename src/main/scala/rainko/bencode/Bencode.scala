@@ -4,10 +4,10 @@ import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 import rainko.bencode.parser._
 import rainko.bencode.syntax._
-
-import scala.collection.immutable.Queue
 import scodec.bits.ByteVector
+
 import java.nio.charset.Charset
+import scala.collection.immutable.Queue
 
 sealed trait Bencode {
   import Bencode._
@@ -70,8 +70,8 @@ object Bencode {
   def parse(encoded: String): Either[ParsingFailure, Bencode] = ByteParser.default.parse(encoded.getBytes.toByteVector)
 
   def parse(encoded: ByteVector): Either[ParsingFailure, Bencode]      = ByteParser.default.parse(encoded)
-  def parseUsingCharset(encoded: ByteVector, charset: StandardCharset) = ByteParser(charset).parse(encoded)
+  def parseUsingCharset(encoded: ByteVector, charset: StandardCharset): Either[ParsingFailure,Bencode] = ByteParser(charset).parse(encoded)
 
-  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset) = ByteParser.fromJavaCharset(charset).parse(encoded)
+  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset): Either[ParsingFailure,Bencode] = ByteParser.fromJavaCharset(charset).parse(encoded)
 
 }

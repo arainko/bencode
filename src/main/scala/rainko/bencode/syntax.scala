@@ -1,6 +1,7 @@
 package rainko.bencode
 
 import scodec.bits.ByteVector
+
 import java.nio.charset.Charset
 
 object syntax {

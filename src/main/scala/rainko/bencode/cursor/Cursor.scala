@@ -5,6 +5,8 @@ import rainko.bencode.cursor.Cursor.{DictFieldTarget, ListIndexTarget, Target}
 import rainko.bencode.{Bencode, Decoder}
 
 import scala.collection.immutable.Queue
+import rainko.bencode.BencodeError
+import rainko.bencode.DecodingError
 
 final case class Cursor(private val bencode: Bencode, private val targets: Queue[Target]) {
   def list(index: Int): Cursor   = withNextTarget(ListIndexTarget(index))
@@ -17,9 +19,9 @@ final case class Cursor(private val bencode: Bencode, private val targets: Queue
 
   def focusAs[A <: Bencode: Caster]: Option[A] = focus.flatMap(Caster[A].cast)
 
-  def as[A: Decoder]: Either[String, A] =
+  def as[A: Decoder]: Either[DecodingError, A] =
     focus
-      .toRight("Couldn't get to the requested field")
+      .toRight(BencodeError.FieldMissing)
       .flatMap(Decoder[A].apply)
 
   private def accessBencode(bencode: Bencode, target: Target): Option[Bencode] =

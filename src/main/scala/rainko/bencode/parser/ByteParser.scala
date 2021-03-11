@@ -1,13 +1,13 @@
 package rainko.bencode.parser
 
-import scodec.bits.ByteVector
-import rainko.bencode._
 import rainko.bencode.Bencode._
 import rainko.bencode.BencodeError._
-import rainko.bencode.syntax._
-import java.nio.charset.StandardCharsets
-import java.nio.charset.Charset
+import rainko.bencode._
 import rainko.bencode.parser.StandardCharset._
+import rainko.bencode.syntax._
+import scodec.bits.ByteVector
+
+import java.nio.charset.{Charset, StandardCharsets}
 
 private[bencode] object ByteParser {
   private lazy val utf8Parser     = new ByteParser(StandardCharsets.UTF_8)
@@ -34,7 +34,7 @@ private[bencode] object ByteParser {
 
 private[parser] class ByteParser(val charset: Charset) {
 
-  implicit private val parsingCharset = charset
+  implicit private val parsingCharset: Charset = charset
 
   private val intStart              = "i".bytesWithCharset.head
   private val listStart             = "l".bytesWithCharset.head

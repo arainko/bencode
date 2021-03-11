@@ -1,8 +1,8 @@
 package rainko.bencode.parser
 
-import java.nio.charset.StandardCharsets
-import java.nio.charset.Charset
 import rainko.bencode.parser.StandardCharset._
+
+import java.nio.charset.{Charset, StandardCharsets}
 
 sealed trait StandardCharset {
 

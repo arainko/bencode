@@ -1,6 +1,7 @@
 package rainko.bencode.derivation
 
 import rainko.bencode.Bencode.BDict
+import rainko.bencode.BencodeError._
 import rainko.bencode.Decoder
 import shapeless._
 import shapeless.labelled.{FieldType, field}
@@ -11,7 +12,7 @@ private[derivation] trait DecoderDerivation {
 
   implicit val hnilDecoder: Decoder.AsObject[HNil] = _ => Right(HNil)
 
-  implicit val cnilDecoder: Decoder.AsObject[CNil] = _ => Left("CNil!")
+  implicit val cnilDecoder: Decoder.AsObject[CNil] = _ => Left(UnexpectedValue("Expansion reached CNil"))
 
   implicit def hlistObjectDecoder[K <: Symbol, H, T <: HList](implicit
     witness: Witness.Aux[K],
