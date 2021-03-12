@@ -52,7 +52,7 @@ private[parser] class ByteParser(val charset: Charset) {
       s"$typeName (using charset ${charset.displayName}",
       s"${bytes.take(15).parseWithCharset}..."
     )
-    
+
   private def matchBInt(value: ByteVector): Boolean    = value.headOption.contains(intStart)
   private def matchBString(value: ByteVector): Boolean = value.headOption.exists(isNumeric)
   private def matchBList(value: ByteVector): Boolean   = value.headOption.contains(listStart)
@@ -66,6 +66,7 @@ private[parser] class ByteParser(val charset: Charset) {
       case BInt(value)   => value.toString.length.toLong + 2
       case BDict(fields) => fields.foldLeft(0L)((acc, curr) => acc + labelSkipSize(curr._1) + skipSize(curr._2)) + 2
       case BList(values) => values.foldLeft(0L)((acc, curr) => acc + skipSize(curr)) + 2
+      case BEmpty        => 0
     }
 
   private def labelSkipSize(label: String): Int = label.length.toString.size + label.length + 1

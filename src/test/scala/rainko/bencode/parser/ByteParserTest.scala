@@ -5,15 +5,10 @@ import rainko.bencode.Bencode._
 import rainko.bencode.syntax._
 import zio.test.Assertion._
 import zio.test._
-import zio.test.magnolia._
 
 import java.nio.charset.Charset
 
 object ByteParserTest extends DefaultRunnableSpec {
-
-  private val charsetGen = DeriveGen[StandardCharset]
-
-  Gen.setOfN(6)(charsetGen)
 
   private val bintGen =
     Gen.anyLong.map(BInt)
@@ -30,8 +25,8 @@ object ByteParserTest extends DefaultRunnableSpec {
   private def bencodeGen[R](charset: Charset = Charset.defaultCharset) = {
     val atomicBencodeGen = Gen.oneOf(bintGen, bstringGen(charset))
     val bencodeGen       = Gen.oneOf(atomicBencodeGen, blistGen(atomicBencodeGen), bdictGen(atomicBencodeGen))
-    val listGen = blistGen(bencodeGen)
-    val dictGen = bdictGen(Gen.oneOf(bencodeGen, atomicBencodeGen, listGen))
+    val listGen          = blistGen(bencodeGen)
+    val dictGen          = bdictGen(Gen.oneOf(bencodeGen, atomicBencodeGen, listGen))
     Gen.oneOf(atomicBencodeGen, bencodeGen, listGen, dictGen)
   }
 

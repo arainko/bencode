@@ -2,7 +2,7 @@ package rainko.bencode
 
 import cats.instances.list._
 import cats.syntax.all._
-import rainko.bencode.Bencode.BDict
+import rainko.bencode.Bencode.{BDict, BEmpty}
 import rainko.bencode.BencodeError._
 import scodec.bits.ByteVector
 
@@ -20,7 +20,9 @@ trait Decoder[A] { self =>
         case Right(value)     => f(value)(bencode)
       }
 
-  final def or(other: Decoder[A]): Decoder[A] = bencode => self.apply(bencode).orElse(other.apply(bencode))
+  final def or[AA >: A](other: Decoder[AA]): Decoder[AA] = bencode => self.apply(bencode).orElse(other.apply(bencode))
+
+  final def widen[B >: A]: Decoder[B] = this.asInstanceOf[Decoder[B]]
 
   final def withFieldsTransformed(f: String => String): Decoder[A] = {
     case bdict @ BDict(_) => self.apply(Decoder.deepTransformFields(bdict, f))
@@ -35,7 +37,7 @@ trait Decoder[A] { self =>
 
 object Decoder {
 
-  trait AsObject[A] extends Decoder[A] { self =>
+  private[bencode] trait AsObject[A] extends Decoder[A] { self =>
     def decodeAsObject(value: BDict): Either[DecodingError, A]
 
     final override def apply(bencode: Bencode): Either[DecodingError, A] =
@@ -46,15 +48,6 @@ object Decoder {
   }
 
   def apply[A: Decoder]: Decoder[A] = implicitly
-
-  implicit def decodeOption[A: Decoder]: Decoder[Option[A]] =
-    bencode => {
-      println("decodeding option")
-      Decoder[A].apply(bencode) match {
-        case Left(value) => Right(None)
-        case Right(value) => Right(Some(value))
-      }
-    }
 
   implicit val decodeString: Decoder[String] = {
     case Bencode.BString(value) => value.decodeUtf8.left.map(err => UnexpectedValue(err.getMessage))
@@ -86,6 +79,18 @@ object Decoder {
 
   implicit val decodeLocalDate: Decoder[LocalDate] =
     decodeInstant.map(LocalDate.ofInstant(_, ZoneId.systemDefault()))
+
+  implicit val decodeNone: Decoder[None.type] = {
+    case BEmpty => Right(None)
+    case _      => Left(UnexpectedValue("It is not empty!"))
+  }
+
+  implicit def decodeOption[A: Decoder]: Decoder[Option[A]] =
+    bencode =>
+      bencode match {
+        case BEmpty => Right(None)
+        case other  => Decoder[A].apply(other).map(Some.apply)
+      }
 
   private def deepTransformFields(bdict: BDict, f: String => String): BDict = {
     val deepTransformed = bdict.fields.map { case (field, value) =>

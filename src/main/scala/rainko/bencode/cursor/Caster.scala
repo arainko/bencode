@@ -12,12 +12,12 @@ object Caster {
 
   implicit val bintCaster: Caster[BInt] = {
     case int @ BInt(_) => Some(int)
-    case _ => None
+    case _             => None
   }
 
   implicit val bstringCaster: Caster[BString] = {
     case string @ BString(_) => Some(string)
-    case _ => None
+    case _                   => None
   }
 
   implicit val blistCaster: Caster[BList] = {

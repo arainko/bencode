@@ -10,6 +10,6 @@ object BencodeError {
   def parsingFailure(typeName: String, input: String): ParsingFailure =
     ParsingFailure(s"Couldn't parse $typeName for input: ${input.take(10)}...", input)
 
-  case object FieldMissing extends DecodingError
+  case object FieldMissing                          extends DecodingError
   final case class UnexpectedValue(message: String) extends DecodingError
 }

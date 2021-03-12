@@ -7,7 +7,7 @@ import java.nio.charset.Charset
 object syntax {
 
   implicit class ByteArrayOps(private val byteArray: Array[Byte]) {
-    def toByteVector: ByteVector = ByteVector.apply(byteArray)
+    def toByteVector: ByteVector                     = ByteVector.apply(byteArray)
     def stringUsingCharset(charset: Charset): String = new String(byteArray, charset)
   }
 

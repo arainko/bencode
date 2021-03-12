@@ -7,7 +7,9 @@ import shapeless.labelled.FieldType
 
 private[derivation] trait EncoderDerivation {
 
-  implicit val hnilEncoder: Encoder.AsObject[HNil] = _ => Bencode.fromFields()
+  private def dict(fields: (String, Bencode)*) = BDict(fields.toMap)
+
+  implicit val hnilEncoder: Encoder.AsObject[HNil] = _ => dict()
 
   implicit val cnilEncoder: Encoder.AsObject[CNil] = _ =>
     throw new RuntimeException("CNil is an uninhabited type and cannot be constructed!")
@@ -29,7 +31,7 @@ private[derivation] trait EncoderDerivation {
     headEncoder: Lazy[Encoder[H]],
     tailEncoder: Encoder.AsObject[T]
   ): Encoder.AsObject[FieldType[K, H] :+: T] = {
-    case Inl(head) => Bencode.fromFields(witness.value.name -> headEncoder.value.apply(head))
+    case Inl(head) => dict(witness.value.name -> headEncoder.value.apply(head))
     case Inr(tail) => tailEncoder.apply(tail)
   }
 

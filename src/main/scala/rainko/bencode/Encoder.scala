@@ -11,7 +11,7 @@ trait Encoder[A] { self =>
 
 object Encoder {
 
-  trait AsObject[A] extends Encoder[A] {
+  private[bencode] trait AsObject[A] extends Encoder[A] {
     def apply(value: A): BDict
   }
 
@@ -27,14 +27,6 @@ object Encoder {
     stringEncoder.contramap { bool =>
       if (bool) "true" else "false"
     }
-
-//  implicit def encodeMap[A: Encoder]: Encoder[Map[String, A]] =
-//    map =>
-//      BDict {
-//        map.map {
-//          case (label, value) => (label, Encoder[A].apply(value))
-//        }
-//      }
 
   implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] = list => Bencode.fromSequence(list.map(Encoder[A].apply))
 }
