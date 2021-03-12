@@ -1,6 +1,6 @@
 package rainko.bencode.parser.decoder
 
-import rainko.bencode.derivation.auto._
+import rainko.bencode.derivation.semiauto._
 import rainko.bencode.{Bencode, Decoder}
 import zio.test.Assertion._
 import zio.test._
@@ -11,8 +11,17 @@ object DecoderTest extends DefaultRunnableSpec {
 
   final case class FirstCoprod(field1: Int, field2: Option[Int])        extends Coproduct
   final case class SecondCoprod(field1: String, field2: Option[String]) extends Coproduct
+  final case class Test(optional: Option[Int], notOptional: String)
 
-  final private case class Test(optional: Option[Int], notOptional: String)
+  implicit val testDecoder: Decoder[Test]                 = deriveDecoder
+  implicit val firstCoprodDecoder: Decoder[FirstCoprod]   = deriveDecoder
+  implicit val secondCoprodDecoder: Decoder[SecondCoprod] = deriveDecoder
+
+  implicit val coproductDecoder: Decoder[Coproduct] =
+    List[Decoder[Coproduct]](
+      firstCoprodDecoder.widen,
+      secondCoprodDecoder.widen
+    ).reduce(_ or _)
 
   def spec: ZSpec[Environment, Failure] =
     suite("Decoders should")(
