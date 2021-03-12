@@ -8,6 +8,7 @@ import zio.test.Assertion._
 import zio.test._
 
 import java.nio.file.{Files, Paths}
+import java.nio.charset.StandardCharsets
 
 object TorrentFileParsingTest extends DefaultRunnableSpec {
 
@@ -37,10 +38,12 @@ object TorrentFileParsingTest extends DefaultRunnableSpec {
   private val torrentFile = Files.readAllBytes(torrentFilePath).toByteVector
 
   def spec: ZSpec[Environment, Failure] =
-    test("should parse torrent file") {
-      val parsed  = Bencode.parse(torrentFile)
-      val decoded = parsed.flatMap(_.cursor.as[TorrentFile])
-      assert(parsed)(isRight) &&
-      assert(decoded)(isRight)
-    }
+    suite("")(
+      test("should parse torrent file") {
+        val parsed  = Bencode.parse(torrentFile)
+        val decoded = parsed.flatMap(_.cursor.as[TorrentFile])
+        assert(parsed)(isRight) &&
+        assert(decoded)(isRight)
+      }
+    )
 }
