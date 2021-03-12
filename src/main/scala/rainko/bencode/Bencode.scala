@@ -6,47 +6,43 @@ import rainko.bencode.parser._
 import rainko.bencode.syntax._
 import scodec.bits.ByteVector
 
-import java.nio.charset.Charset
+import java.nio.charset.{Charset, StandardCharsets}
 import scala.collection.immutable.Queue
 
 sealed trait Bencode {
   import Bencode._
 
-  final def stringify: String = this.stringifyUsingCharset(Charset.defaultCharset)
-
-  final def stringifyUsingCharset(charset: StandardCharset): String = this.stringifyUsingCharset(charset.underlying)
-
-  final def stringifyUsingCharset(charset: Charset): String =
+  /**
+   *    UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues
+   */
+  final def byteify(charset: Charset = StandardCharsets.UTF_8): ByteVector =
     this match {
-      case BString(value) => s"${value.length}:${value.toArray.stringUsingCharset(charset)}"
-      case BInt(value)    => s"i${value}e"
-      case BList(values)  => s"l${values.map(_.stringifyUsingCharset(charset)).mkString}e"
-      case BDict(values) =>
-        values
-          .map { case (key, value) => s"${key.length}:${key}${value.stringifyUsingCharset(charset)}" }
-          .mkString("d", "", "e")
-      case BEmpty => ""
+      case BString(value) =>
+        val length     = ByteVector.view(value.length.toString.getBytes(charset))
+        val sepratator = ByteVector.view(":".getBytes(charset))
+        length ++ sepratator ++ value
+      case BInt(value) =>
+        val end   = ByteVector.view("e".getBytes(charset))
+        val start = ByteVector.view("i".getBytes(charset))
+        start ++ ByteVector.view(value.toString.getBytes(charset)) ++ end
+      case BList(values) =>
+        val start = ByteVector.view("l".getBytes(charset))
+        val end   = ByteVector.view("e".getBytes(charset))
+        start ++ values.foldLeft(ByteVector.empty)(_ ++ _.byteify(charset)) ++ end
+      case BDict(fields) =>
+        val start = ByteVector.view("d".getBytes(charset))
+        val end   = ByteVector.view("e".getBytes(charset))
+        val fieldReprs = fields
+          .map { case (key, value) =>
+            val labelLength = ByteVector.view(key.length.toString.getBytes(charset))
+            val sepratator  = ByteVector.view(":".getBytes(charset))
+            val label       = ByteVector.view(key.getBytes(charset))
+            labelLength ++ sepratator ++ label ++ value.byteify(charset)
+          }
+          .foldLeft(ByteVector.empty)(_ ++ _)
+        start ++ fieldReprs ++ end
+      case BEmpty => ByteVector.empty
     }
-
-  final def prettyStringify: String = {
-    def withIndent(level: Int, bencode: Bencode): String =
-      bencode match {
-        case string @ BString(_) => "  " + string.stringify
-        case int @ BInt(_)       => "  " + int.stringify
-        case BList(values) =>
-          values
-            .map(v => withIndent(level + 1, v))
-            .mkString(s"\n${"  " * level}l\n", "\n", s"\n${"  " * level}e")
-        case BDict(fields) =>
-          fields
-            .map { case (key, value) =>
-              s"${"  " * level}${key.length}:${key}${withIndent(level + 1, value)}"
-            }
-            .mkString(s"\n${"  " * level}d\n", "\n", s"\n${"  " * level}e")
-        case BEmpty => ""
-      }
-    withIndent(0, this)
-  }
 
   final def cursor: Cursor = Cursor(this, Queue.empty)
 }
@@ -74,14 +70,26 @@ object Bencode {
 
   def fromMap(entries: Map[String, Bencode]): Bencode = BDict(entries)
 
-  def parse(encoded: String): Either[ParsingFailure, Bencode] = ByteParser.default.parse(encoded.getBytes.toByteVector)
+  /*
+    UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues
+   */
+  def parse(
+    encoded: String,
+    charset: Charset
+  ): Either[ParsingFailure, Bencode] =
+    ByteParser
+      .withCharset(charset)
+      .parse(encoded.getBytes(charset).toByteVector)
 
-  def parse(encoded: ByteVector): Either[ParsingFailure, Bencode] = ByteParser.default.parse(encoded)
-
-  def parseUsingCharset(encoded: ByteVector, charset: StandardCharset): Either[ParsingFailure, Bencode] =
-    ByteParser(charset).parse(encoded)
-
-  def parseUsingJavaCharset(encoded: ByteVector, charset: Charset): Either[ParsingFailure, Bencode] =
-    ByteParser.fromJavaCharset(charset).parse(encoded)
+  /*
+    UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues
+   */
+  def parse(
+    encoded: ByteVector,
+    charset: Charset = StandardCharsets.UTF_8
+  ): Either[ParsingFailure, Bencode] =
+    ByteParser
+      .withCharset(charset)
+      .parse(encoded)
 
 }

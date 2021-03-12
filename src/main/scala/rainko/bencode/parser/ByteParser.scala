@@ -3,33 +3,13 @@ package rainko.bencode.parser
 import rainko.bencode.Bencode._
 import rainko.bencode.BencodeError._
 import rainko.bencode._
-import rainko.bencode.parser.StandardCharset._
 import rainko.bencode.syntax._
 import scodec.bits.ByteVector
 
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
 
 private[bencode] object ByteParser {
-  private lazy val utf8Parser     = new ByteParser(StandardCharsets.UTF_8)
-  private lazy val usAsciiParser  = new ByteParser(StandardCharsets.US_ASCII)
-  private lazy val iso88581Parser = new ByteParser(StandardCharsets.ISO_8859_1)
-  private lazy val utf16Parser    = new ByteParser(StandardCharsets.UTF_16)
-  private lazy val utf16BEParser  = new ByteParser(StandardCharsets.UTF_16BE)
-  private lazy val utf16LEParser  = new ByteParser(StandardCharsets.UTF_16LE)
-
-  lazy val default = new ByteParser(Charset.defaultCharset)
-
-  def apply(standardCharset: StandardCharset): ByteParser =
-    standardCharset match {
-      case `US-ASCII`   => usAsciiParser
-      case `ISO-8858-1` => iso88581Parser
-      case `UTF-8`      => utf8Parser
-      case `UTF-16BE`   => utf16BEParser
-      case `UTF-16LE`   => utf16LEParser
-      case `UTF-16`     => utf16Parser
-    }
-
-  def fromJavaCharset(charset: Charset): ByteParser = new ByteParser(charset)
+  def withCharset(charset: Charset): ByteParser = new ByteParser(charset)
 }
 
 private[parser] class ByteParser(val charset: Charset) {
