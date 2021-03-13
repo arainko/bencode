@@ -4,6 +4,8 @@ import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 import rainko.bencode.parser._
 import rainko.bencode.syntax._
+import cats.instances.tuple._
+import cats.syntax.bifunctor._
 import scodec.bits.ByteVector
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -42,6 +44,29 @@ sealed trait Bencode {
           .foldLeft(ByteVector.empty)(_ ++ _)
         start ++ fieldReprs ++ end
       case BEmpty => ByteVector.empty
+    }
+
+  final def deepDropEmpty: Bencode =
+    this match {
+      case BDict(fields) =>
+        BDict {
+          fields
+            .filter { case (_, value) => value != BEmpty }
+            .map(_.bimap(identity, _.deepDropEmpty))
+        }
+      case other => other
+    }
+
+  final def transformFields(f: String => String): Bencode =
+    this match {
+      case BDict(fields) => BDict(fields.map(_.bimap(f, identity)))
+      case other         => other
+    }
+
+  final def transformFieldsDeep(f: String => String): Bencode =
+    this match {
+      case BDict(fields) => BDict(fields.map(_.bimap(f, _.transformFieldsDeep(f))))
+      case other         => other
     }
 
   final def cursor: Cursor = Cursor(this, Queue.empty)

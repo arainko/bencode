@@ -24,15 +24,10 @@ trait Decoder[A] { self =>
 
   final def widen[B >: A]: Decoder[B] = this.asInstanceOf[Decoder[B]]
 
-  final def withFieldsTransformed(f: String => String): Decoder[A] = {
-    case bdict @ BDict(_) => self.apply(Decoder.deepTransformFields(bdict, f))
-    case _                => Left(UnexpectedValue("Fields cannot be renamed as the bencode isn't a BDict!"))
-  }
+  final def withFieldsTransformed(f: String => String): Decoder[A] = bencode => self.apply(bencode.transformFields(f))
 
-  final def withFieldsRenamed(f: PartialFunction[String, String]): Decoder[A] = {
-    case bdict @ BDict(_) => self.apply(Decoder.deepRenameFields(bdict, f))
-    case _                => Left(UnexpectedValue("Fields cannot be renamed as the bencode isn't a BDict!"))
-  }
+  final def withFieldsRenamed(f: PartialFunction[String, String]): Decoder[A] = bencode =>
+   self.apply(bencode.transformFields(label => f.applyOrElse(label, identity[String])))
 }
 
 object Decoder {
@@ -92,23 +87,4 @@ object Decoder {
         case other  => Decoder[A].apply(other).map(Some.apply)
       }
 
-  private def deepTransformFields(bdict: BDict, f: String => String): BDict = {
-    val deepTransformed = bdict.fields.map { case (field, value) =>
-      f(field) -> (value match {
-        case deepBDict @ BDict(_) => deepTransformFields(deepBDict, f)
-        case bencode              => bencode
-      })
-    }
-    BDict(deepTransformed)
-  }
-
-  private def deepRenameFields(bdict: BDict, f: PartialFunction[String, String]): BDict = {
-    val deepTransformed = bdict.fields.map { case (field, value) =>
-      f.applyOrElse(field, identity[String]) -> (value match {
-        case deepBDict @ BDict(_) => deepRenameFields(deepBDict, f)
-        case bencode              => bencode
-      })
-    }
-    BDict(deepTransformed)
-  }
 }

@@ -1,12 +1,22 @@
 package rainko.bencode
 
 import rainko.bencode.Bencode._
-import rainko.bencode.syntax._
+import scodec.bits.ByteVector
 
 trait Encoder[A] { self =>
   def apply(value: A): Bencode
 
   final def contramap[B](f: B => A): Encoder[B] = (value: B) => self.apply(f(value))
+
+  final def withFieldsRenamed(f: PartialFunction[String, String]): Encoder[A] =
+    self
+      .apply(_)
+      .transformFields(label => f.applyOrElse(label, identity[String]))
+
+  final def withFieldsRenamedDeep(f: PartialFunction[String, String]): Encoder[A] =
+    self
+      .apply(_)
+      .transformFieldsDeep(label => f.applyOrElse(label, identity[String]))
 }
 
 object Encoder {
@@ -17,11 +27,10 @@ object Encoder {
 
   def apply[A: Encoder]: Encoder[A] = implicitly
 
-  implicit val stringEncoder: Encoder[String] = string => BString(string.getBytes.toByteVector)
-
-  implicit val intEncoder: Encoder[Int] = int => BInt(int.toLong)
-
-  implicit val longEncoder: Encoder[Long] = intEncoder.contramap(_.intValue)
+  implicit val byteVectorEncoder: Encoder[ByteVector] = Bencode.fromByteVector
+  implicit val stringEncoder: Encoder[String]         = Bencode.fromString
+  implicit val longEncoder: Encoder[Long]             = BInt.apply
+  implicit val intEncoder: Encoder[Int]               = int => BInt(int.toLong)
 
   implicit val booleanEncoder: Encoder[Boolean] =
     stringEncoder.contramap { bool =>
