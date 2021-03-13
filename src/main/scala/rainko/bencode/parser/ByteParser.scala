@@ -7,6 +7,7 @@ import rainko.bencode.syntax._
 import scodec.bits.ByteVector
 
 import java.nio.charset.Charset
+import scala.collection.immutable.SortedMap
 
 private[bencode] object ByteParser {
   def withCharset(charset: Charset): ByteParser = new ByteParser(charset)
@@ -93,7 +94,7 @@ private[parser] class ByteParser(val charset: Charset) {
             valueSize = skipSize(value)
             nextField <- accumulate(entry.drop(labelSize + valueSize), acc :+ (stringLabel -> value))
           } yield nextField
-        case endDict if endDict.headOption.contains(end) => Right(BDict(acc.toMap))
+        case endDict if endDict.headOption.contains(end) => Right(BDict(SortedMap.from(acc)))
         case failedInput                                 => Left(parsingFailure("BDict", failedInput))
       }
     accumulate(value.drop(1), Nil)

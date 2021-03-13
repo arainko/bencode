@@ -2,7 +2,7 @@ package rainko.bencode
 
 import cats.instances.list._
 import cats.syntax.all._
-import rainko.bencode.Bencode.{BDict, BEmpty}
+import rainko.bencode.Bencode.BEmpty
 import rainko.bencode.BencodeError._
 import scodec.bits.ByteVector
 
@@ -26,21 +26,11 @@ trait Decoder[A] { self =>
 
   final def withFieldsTransformed(f: String => String): Decoder[A] = bencode => self.apply(bencode.transformFields(f))
 
-  final def withFieldsRenamed(f: PartialFunction[String, String]): Decoder[A] = bencode =>
-   self.apply(bencode.transformFields(label => f.applyOrElse(label, identity[String])))
+  final def withFieldsRenamed(f: PartialFunction[String, String]): Decoder[A] =
+    bencode => self.apply(bencode.transformFields(label => f.applyOrElse(label, identity[String])))
 }
 
 object Decoder {
-
-  private[bencode] trait AsObject[A] extends Decoder[A] { self =>
-    def decodeAsObject(value: BDict): Either[DecodingError, A]
-
-    final override def apply(bencode: Bencode): Either[DecodingError, A] =
-      bencode match {
-        case dict @ BDict(_) => decodeAsObject(dict)
-        case _               => Left(UnexpectedValue("Not a dict!"))
-      }
-  }
 
   def apply[A: Decoder]: Decoder[A] = implicitly
 

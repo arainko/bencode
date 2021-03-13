@@ -6,7 +6,8 @@ import rainko.bencode.syntax._
 import zio.test.Assertion._
 import zio.test._
 
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 object ByteParserTest extends DefaultRunnableSpec {
 
@@ -27,7 +28,7 @@ object ByteParserTest extends DefaultRunnableSpec {
 
   private def blistGen[R](bencodeGen: Gen[R, Bencode]) = Gen.listOf(bencodeGen).map(BList)
 
-  private def bdictGen[R](bencodeGen: Gen[R, Bencode]) = Gen.mapOf(Gen.anyASCIIString, bencodeGen).map(BDict)
+  private def bdictGen[R](bencodeGen: Gen[R, Bencode]) = Gen.mapOf(Gen.anyASCIIString, bencodeGen).map(Bencode.fromMap)
 
   private def bencodeGen[R](charset: Charset) = {
     val atomicBencodeGen = Gen.oneOf(bintGen, bstringGen(charset))

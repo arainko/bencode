@@ -1,15 +1,15 @@
 package rainko.bencode
 
+import cats.instances.tuple._
+import cats.syntax.bifunctor._
 import rainko.bencode.BencodeError.ParsingFailure
 import rainko.bencode.cursor.Cursor
 import rainko.bencode.parser._
 import rainko.bencode.syntax._
-import cats.instances.tuple._
-import cats.syntax.bifunctor._
 import scodec.bits.ByteVector
 
 import java.nio.charset.{Charset, StandardCharsets}
-import scala.collection.immutable.Queue
+import scala.collection.immutable.{Queue, SortedMap}
 
 sealed trait Bencode {
   import Bencode._
@@ -18,7 +18,7 @@ sealed trait Bencode {
    *    UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues
    */
   final def byteify(charset: Charset = StandardCharsets.UTF_8): ByteVector =
-    this match {
+    this.deepDropEmpty match {
       case BString(value) =>
         val length     = ByteVector.view(value.length.toString.getBytes(charset))
         val sepratator = ByteVector.view(":".getBytes(charset))
@@ -73,11 +73,11 @@ sealed trait Bencode {
 }
 
 object Bencode {
-  final private[bencode] case class BString(value: ByteVector)          extends Bencode
-  final private[bencode] case class BInt(value: Long)                   extends Bencode
-  final private[bencode] case class BList(values: List[Bencode])        extends Bencode
-  final private[bencode] case class BDict(fields: Map[String, Bencode]) extends Bencode
-  private[bencode] case object BEmpty                                   extends Bencode
+  final private[bencode] case class BString(value: ByteVector)                extends Bencode
+  final private[bencode] case class BInt(value: Long)                         extends Bencode
+  final private[bencode] case class BList(values: List[Bencode])              extends Bencode
+  final private[bencode] case class BDict(fields: SortedMap[String, Bencode]) extends Bencode
+  private[bencode] case object BEmpty                                         extends Bencode
 
   def fromString(string: String): Bencode = BString(string.getBytes.toByteVector)
 
@@ -91,9 +91,9 @@ object Bencode {
 
   def fromSequence(seq: Seq[Bencode]): Bencode = BList(seq.toList)
 
-  def fromFields(fields: (String, Bencode)*): Bencode = Bencode.fromMap(fields.toMap)
+  def fromFields(fields: (String, Bencode)*): Bencode = Bencode.fromMap(SortedMap(fields: _*))
 
-  def fromMap(entries: Map[String, Bencode]): Bencode = BDict(entries)
+  def fromMap(entries: Map[String, Bencode]): Bencode = BDict(SortedMap.from(entries))
 
   /*
     UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues

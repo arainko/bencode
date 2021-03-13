@@ -1,12 +1,16 @@
 package rainko.bencode
 
 import rainko.bencode.Bencode._
+import cats.instances.tuple._
+import cats.syntax.bifunctor._
 import scodec.bits.ByteVector
 
 trait Encoder[A] { self =>
   def apply(value: A): Bencode
 
   final def contramap[B](f: B => A): Encoder[B] = (value: B) => self.apply(f(value))
+
+  final def transform(f: Bencode => Bencode): Encoder[A] = value => f(self.apply(value))
 
   final def withFieldsRenamed(f: PartialFunction[String, String]): Encoder[A] =
     self
@@ -36,6 +40,10 @@ object Encoder {
     stringEncoder.contramap { bool =>
       if (bool) "true" else "false"
     }
+  implicit def optionEncoder[A: Encoder]: Encoder[Option[A]] = value => value.map(Encoder[A].apply).getOrElse(BEmpty)
 
   implicit def encodeSeq[A: Encoder]: Encoder[Seq[A]] = list => Bencode.fromSequence(list.map(Encoder[A].apply))
+
+  implicit def encodeMap[A: Encoder]: Encoder[Map[String, A]] =
+    map => Bencode.fromMap(map.map(_.bimap(identity, Encoder[A].apply)))
 }

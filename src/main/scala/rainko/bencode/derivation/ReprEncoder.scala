@@ -3,12 +3,13 @@ package rainko.bencode.derivation
 import rainko.bencode.{Bencode, Encoder}
 import shapeless._
 import shapeless.labelled.FieldType
+import scala.collection.immutable.SortedMap
 
 abstract class ReprEncoder[A] extends Encoder.AsObject[A]
 
 object ReprEncoder {
 
-  private def dict(fields: (String, Bencode)*) = Bencode.BDict(fields.toMap)
+  private def dict(fields: (String, Bencode)*) = Bencode.BDict(SortedMap(fields: _*))
 
   implicit val baseCaseProduct: ReprEncoder[HNil] = _ => dict()
 
