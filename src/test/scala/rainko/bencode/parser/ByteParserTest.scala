@@ -1,13 +1,12 @@
-package rainko.bencode.parser
+package io.github.arainko.bencode.parser
 
-import rainko.bencode.Bencode
-import rainko.bencode.Bencode._
-import rainko.bencode.syntax._
+import io.github.arainko.bencode.Bencode
+import io.github.arainko.bencode.Bencode._
+import io.github.arainko.bencode.util._
 import zio.test.Assertion._
 import zio.test._
 
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
+import java.nio.charset.{Charset, StandardCharsets}
 
 object ByteParserTest extends DefaultRunnableSpec {
 
@@ -20,7 +19,7 @@ object ByteParserTest extends DefaultRunnableSpec {
   private val bintGen =
     Gen.anyLong.map(BInt)
 
-  private def bstringGen(charset: Charset) =
+  private def bstringGen =
     Gen
       .chunkOf(Gen.anyByte)
       .map(_.toArray.toByteVector)
@@ -30,8 +29,8 @@ object ByteParserTest extends DefaultRunnableSpec {
 
   private def bdictGen[R](bencodeGen: Gen[R, Bencode]) = Gen.mapOf(Gen.anyASCIIString, bencodeGen).map(Bencode.fromMap)
 
-  private def bencodeGen[R](charset: Charset) = {
-    val atomicBencodeGen = Gen.oneOf(bintGen, bstringGen(charset))
+  private def bencodeGen[R] = {
+    val atomicBencodeGen = Gen.oneOf(bintGen, bstringGen)
     val bencodeGen       = Gen.oneOf(atomicBencodeGen, blistGen(atomicBencodeGen), bdictGen(atomicBencodeGen))
     val listGen          = blistGen(bencodeGen)
     val dictGen          = bdictGen(Gen.oneOf(bencodeGen, atomicBencodeGen, listGen))
@@ -48,21 +47,21 @@ object ByteParserTest extends DefaultRunnableSpec {
         }
       },
       testM(s"parse BString ($charset)") {
-        check(bstringGen(charset)) { bstring =>
+        check(bstringGen) { bstring =>
           val sringified = bstring.byteify(charset)
           val parsed     = Bencode.parse(sringified, charset)
           assert(parsed)(isRight(equalTo(bstring)))
         }
       },
       testM(s"parse BList ($charset)") {
-        check(blistGen(bencodeGen(charset))) { blist =>
+        check(blistGen(bencodeGen)) { blist =>
           val sringified = blist.byteify(charset)
           val parsed     = Bencode.parse(sringified, charset)
           assert(parsed)(isRight(equalTo(blist)))
         }
       },
       testM(s"parse BDict ($charset)") {
-        check(bdictGen(bencodeGen(charset))) { bdict =>
+        check(bdictGen(bencodeGen)) { bdict =>
           val sringified = bdict.byteify(charset)
           val parsed     = Bencode.parse(sringified, charset)
           assert(parsed)(isRight(equalTo(bdict)))

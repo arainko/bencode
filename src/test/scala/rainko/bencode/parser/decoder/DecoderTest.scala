@@ -1,7 +1,7 @@
-package rainko.bencode.parser.decoder
+package io.github.arainko.bencode.parser.decoder
 
-import rainko.bencode.derivation.semiauto._
-import rainko.bencode.{Bencode, Decoder}
+import io.github.arainko.bencode.derivation.semiauto._
+import io.github.arainko.bencode.{Bencode, Decoder}
 import zio.test.Assertion._
 import zio.test._
 

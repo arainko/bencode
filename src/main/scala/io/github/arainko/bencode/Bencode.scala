@@ -1,11 +1,11 @@
-package rainko.bencode
+package io.github.arainko.bencode
 
 import cats.instances.tuple._
 import cats.syntax.bifunctor._
-import rainko.bencode.BencodeError.ParsingFailure
-import rainko.bencode.cursor.Cursor
-import rainko.bencode.parser._
-import rainko.bencode.syntax._
+import io.github.arainko.bencode.BencodeError.ParsingFailure
+import io.github.arainko.bencode.cursor.Cursor
+import io.github.arainko.bencode.parser._
+import io.github.arainko.bencode.util._
 import scodec.bits.ByteVector
 
 import java.nio.charset.{Charset, StandardCharsets}
@@ -116,5 +116,13 @@ object Bencode {
     ByteParser
       .withCharset(charset)
       .parse(encoded)
+
+  /*
+    UTF-16, UTF-16LE and UTF-16BE charsets are known to cause issues
+   */
+  def parseAs[A: Decoder](
+    encoded: ByteVector,
+    charset: Charset = StandardCharsets.UTF_8
+  ): Either[BencodeError, A] = parse(encoded, charset).flatMap(_.cursor.as[A])
 
 }

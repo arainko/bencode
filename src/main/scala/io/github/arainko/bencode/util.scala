@@ -1,10 +1,10 @@
-package rainko.bencode
+package io.github.arainko.bencode
 
 import scodec.bits.ByteVector
 
 import java.nio.charset.Charset
 
-object syntax {
+private[bencode] object util {
 
   implicit class ByteArrayOps(private val byteArray: Array[Byte]) {
     def toByteVector: ByteVector                     = ByteVector.apply(byteArray)
@@ -22,7 +22,4 @@ object syntax {
         .map(err => BencodeError.ParsingFailure(err.getMessage, s"${byteVector.take(10).toString}..."))
   }
 
-  implicit class EncoderOps[A](private val value: A) extends AnyVal {
-    def encode(implicit enc: Encoder[A]): Bencode = enc(value)
-  }
 }

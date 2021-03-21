@@ -1,9 +1,9 @@
-package rainko.bencode
+package io.github.arainko.bencode
 
 import cats.instances.list._
 import cats.syntax.all._
-import rainko.bencode.Bencode.BEmpty
-import rainko.bencode.BencodeError._
+import io.github.arainko.bencode.Bencode.BEmpty
+import io.github.arainko.bencode.BencodeError._
 import scodec.bits.ByteVector
 
 import java.time.{Instant, LocalDate, ZoneId}
@@ -69,6 +69,8 @@ object Decoder {
     case BEmpty => Right(None)
     case _      => Left(UnexpectedValue("It is not empty!"))
   }
+
+  implicit def decodeSome[A: Decoder]: Decoder[Some[A]] = bencode => Decoder[A].apply(bencode).map(Some.apply)
 
   implicit def decodeOption[A: Decoder]: Decoder[Option[A]] =
     bencode =>

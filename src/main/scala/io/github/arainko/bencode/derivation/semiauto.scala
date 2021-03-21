@@ -1,6 +1,6 @@
-package rainko.bencode.derivation
+package io.github.arainko.bencode.derivation
 
-import rainko.bencode.{Decoder, Encoder}
+import io.github.arainko.bencode.{Decoder, Encoder}
 
 object semiauto {
   final def deriveDecoder[A](implicit decoder: DerivedDecoder[A]): Decoder[A]          = decoder

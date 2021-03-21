@@ -1,9 +1,9 @@
-package rainko.bencode.parser
+package io.github.arainko.bencode.parser
 
-import rainko.bencode.Bencode._
-import rainko.bencode.BencodeError._
-import rainko.bencode._
-import rainko.bencode.syntax._
+import io.github.arainko.bencode.Bencode._
+import io.github.arainko.bencode.BencodeError._
+import io.github.arainko.bencode._
+import io.github.arainko.bencode.util._
 import scodec.bits.ByteVector
 
 import java.nio.charset.Charset
@@ -31,7 +31,7 @@ private[parser] class ByteParser(val charset: Charset) {
   private def parsingFailure(typeName: String, bytes: ByteVector) =
     BencodeError.parsingFailure(
       s"$typeName (using charset ${charset.displayName}",
-      s"${bytes.take(15).parseWithCharset}..."
+      s"${bytes.take(15).toHex}..."
     )
 
   private def matchBInt(value: ByteVector): Boolean    = value.headOption.contains(intStart)

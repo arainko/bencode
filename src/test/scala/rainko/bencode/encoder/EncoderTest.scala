@@ -1,8 +1,8 @@
-package rainko.bencode.encoder
+package io.github.arainko.bencode.encoder
 
-import rainko.bencode._
-import rainko.bencode.derivation.semiauto._
-import rainko.bencode.syntax._
+import io.github.arainko.bencode._
+import io.github.arainko.bencode.derivation.semiauto._
+import io.github.arainko.bencode.syntax._
 import zio.test.Assertion._
 import zio.test._
 
@@ -15,20 +15,20 @@ object EncoderTest extends DefaultRunnableSpec {
     nonOpt   <- Gen.anyASCIIString
   } yield OptionTest(optional, nonOpt)
 
-  implicit val encoder = deriveEncoder[OptionTest]
-  implicit val decoder = deriveDecoder[OptionTest]
+  implicit val encoder: Encoder.AsObject[OptionTest] = deriveEncoder[OptionTest]
+  implicit val decoder: Decoder[OptionTest]          = deriveDecoder[OptionTest]
 
   def spec: ZSpec[Environment, Failure] =
     suite("Derived encoders should")(
       testM("encode and decode back") {
         check(testGen) { opt =>
-          val decoded = opt.encode.cursor.as[OptionTest]
+          val decoded = opt.asBencode.cursor.as[OptionTest]
           assert(decoded)(isRight(equalTo(opt)))
         }
       },
       testM("encode and decode from byte representation") {
         check(testGen) { opt =>
-          val decoded = Bencode.parse(opt.encode.byteify()).flatMap(_.cursor.as[OptionTest])
+          val decoded = Bencode.parse(opt.asBencode.byteify()).flatMap(_.cursor.as[OptionTest])
           assert(decoded)(isRight(equalTo(opt)))
         }
       }

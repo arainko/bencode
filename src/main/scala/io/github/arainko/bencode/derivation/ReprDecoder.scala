@@ -1,6 +1,6 @@
-package rainko.bencode.derivation
+package io.github.arainko.bencode.derivation
 
-import rainko.bencode._
+import io.github.arainko.bencode._
 import shapeless._
 import shapeless.labelled._
 

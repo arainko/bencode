@@ -1,8 +1,8 @@
-package rainko.bencode
+package io.github.arainko.bencode
 
-import rainko.bencode.Bencode._
 import cats.instances.tuple._
 import cats.syntax.bifunctor._
+import io.github.arainko.bencode.Bencode._
 import scodec.bits.ByteVector
 
 trait Encoder[A] { self =>
@@ -32,6 +32,7 @@ object Encoder {
   def apply[A: Encoder]: Encoder[A] = implicitly
 
   implicit val byteVectorEncoder: Encoder[ByteVector] = Bencode.fromByteVector
+  implicit val byteArrayEncoder: Encoder[Array[Byte]] = Bencode.fromByteArray
   implicit val stringEncoder: Encoder[String]         = Bencode.fromString
   implicit val longEncoder: Encoder[Long]             = BInt.apply
   implicit val intEncoder: Encoder[Int]               = int => BInt(int.toLong)

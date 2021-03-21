@@ -1,8 +1,9 @@
-package rainko.bencode.derivation
+package io.github.arainko.bencode.derivation
 
-import rainko.bencode.{Bencode, Encoder}
+import io.github.arainko.bencode.{Bencode, Encoder}
 import shapeless._
 import shapeless.labelled.FieldType
+
 import scala.collection.immutable.SortedMap
 
 abstract class ReprEncoder[A] extends Encoder.AsObject[A]

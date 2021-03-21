@@ -1,18 +1,17 @@
 ## Bencode for Scala
 
-Typesafe bencode encoder/decoder with automatic derivation.
+Typesafe bencode encoders and decoders with semi-automatic derivation.
 
 ### Example
 
 Assuming these imports:
 
-```
-import java.nio.file.Files
-import java.nio.file.Paths
-import scodec.bits.ByteVector
-import rainko.bencode.syntax._
-import rainko.bencode.derivation.auto._
-import rainko.bencode.parser.ByteParser
+``` scala
+import scodec.bits._
+import zio.stream.ZStream
+import io.github.arainko.bencode._
+import io.github.arainko.bencode.syntax._
+import io.github.arainko.bencode.derivation.semiauto._
 ```
 
 Given a torrent file (eg. `https://releases.ubuntu.com/20.10/ubuntu-20.10-desktop-amd64.iso.torrent`) with a structure like this:
@@ -44,7 +43,7 @@ e
 
 and a structure of case classes:
 
-```
+``` scala
   final case class Info(length: Long, name: String, pieceLength: Long, pieces: ByteVector)
 
   final case class TorrentFile(
@@ -57,25 +56,25 @@ and a structure of case classes:
   )
 ```
 
-We can parse the .torrent file almost boilerplate free:
+We can parse the .torrent file almost boilerplate free (always make sure you derive the 'inner' parts of your case class/ADT first!):
 
-```
- private val torrentFilePath = Paths.get(
-    "/home/aleksander/IdeaProjects/bencode/src/test/resources/ubuntu.torrent"
-  )
-  
- private val torrentFile = Files.readAllBytes(torrentFilePath).toByteVector
-  
- val parsed = ByteParser.parse(torrentFile)
+```  scala
+  implicit val infoDecoder: Decoder[Info] =
+    deriveDecoder[Info]
+      .withFieldsRenamed { case "piece length" =>"pieceLength" }
 
- implicit val decoder = Decoder[TorrentFile].withFieldsRenamed {
-   case "created by"    => "createdBy"
-   case "creation date" => "creationDate"
-   case "announce-list" => "announceList"
-   case "piece length"  => "pieceLength"
- }
+  implicit val decoder: Decoder[TorrentFile] = deriveDecoder[TorrentFile].withFieldsRenamed {
+    case "created by"    => "createdBy"
+    case "creation date" => "creationDate"
+    case "announce-list" => "announceList"
+  }
  
- val decoded = parsed.flatMap(_.cursor.as[TorrentFile])
+ val decoded = 
+  for {
+    torrentFile <- ZStream.fromResource("ubuntu.torrent").runCollect.map(_.toArray).map(ByteVector.apply)
+    parsed  = Bencode.parse(torrentFile)
+    decoded = parsed.flatMap(_.cursor.as[TorrentFile])
+  } yield decoded
  
  // output
  Right(
@@ -94,5 +93,8 @@ We can parse the .torrent file almost boilerplate free:
  )
 ```
 
-### Docs
-TODO
+### Acknowledgements
+This library's design is heavily influenced by the great [circe](https://circe.github.io/circe/),
+uses the just-as-great [shapeless](https://github.com/milessabin/shapeless) for typeclass derivation
+and makes use of [scodec's](https://github.com/scodec/scodec) `ByteVector` for binary representation 
+of bencoded values.

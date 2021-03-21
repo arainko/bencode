@@ -1,8 +1,8 @@
-package rainko.bencode.cursor
+package io.github.arainko.bencode.cursor
 
-import rainko.bencode.Bencode._
-import rainko.bencode.cursor.Cursor.{DictFieldTarget, ListIndexTarget, Target}
-import rainko.bencode.{Bencode, Decoder, DecodingError}
+import io.github.arainko.bencode.Bencode._
+import io.github.arainko.bencode.cursor.Cursor.{DictFieldTarget, ListIndexTarget, Target}
+import io.github.arainko.bencode.{Bencode, Decoder, DecodingError}
 
 import scala.collection.immutable.Queue
 
@@ -15,8 +15,6 @@ final case class Cursor(private val bencode: Bencode, private val targets: Queue
       case BEmpty => None
       case other  => Some(other)
     }
-
-  def focusAs[A <: Bencode: Caster]: Option[A] = focus.flatMap(Caster[A].cast)
 
   def as[A: Decoder]: Either[DecodingError, A] =
     Decoder[A].apply {

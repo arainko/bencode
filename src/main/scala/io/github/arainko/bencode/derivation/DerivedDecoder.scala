@@ -1,6 +1,6 @@
-package rainko.bencode.derivation
+package io.github.arainko.bencode.derivation
 
-import rainko.bencode.{Bencode, Decoder, DecodingError}
+import io.github.arainko.bencode.{Bencode, Decoder, DecodingError}
 import shapeless.LabelledGeneric
 
 abstract class DerivedDecoder[A] extends Decoder[A]
