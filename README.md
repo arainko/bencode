@@ -2,6 +2,17 @@
 
 Typesafe bencode encoders and decoders with semi-automatic derivation.
 
+### Installation
+
+All releases are published on [Maven Central](https://search.maven.org/artifact/io.github.arainko/bencode_2.13).
+
+To use the library add this to your `build.sbt`:
+```scala
+
+libraryDependencies += "io.github.arainko" %% "bencode" % "0.1.0"
+
+```
+
 ### Example
 
 Assuming these imports:
