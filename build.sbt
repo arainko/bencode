@@ -4,7 +4,6 @@ name := "bencode"
 organization := "io.github.arainko"
 licenses := Seq("APL2" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 description := "A bencode library with typesafe schema derivation"
-version := "0.1.0"
 
 publishMavenStyle := true
 sonatypeProjectHosting := Some(GitHubHosting("arainko", "bencode", "aleksander.rainko99@gmail.com"))
