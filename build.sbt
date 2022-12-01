@@ -29,5 +29,6 @@ lazy val bencode =
     .in(file("bencode"))
     .settings(
       scalacOptions ++= List("-Xcheck-macros", "-no-indent", "-old-syntax", "-Xfatal-warnings"),
-      libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M6" % Test
+      libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M6" % Test,
+      libraryDependencies += "org.scodec" %% "scodec-core" % "2.2.0"
     )
