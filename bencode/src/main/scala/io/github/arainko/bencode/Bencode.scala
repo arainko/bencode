@@ -5,7 +5,7 @@ import scodec.bits.*
 import scala.collection.immutable.SortedMap
 import scala.deriving.Mirror.Sum
 
-enum Bencode {
+enum Bencode:
   // bencode of eg. 100 repr: i100e
   case Long(value: scala.Long)
 
@@ -18,10 +18,3 @@ enum Bencode {
   // bencode dicts are supposed to have stable order
   // bencode repr of Map("field1" -> 123): d6:field1i123ee
   case Dict(values: SortedMap[String, Bencode])
-}
-
-trait Encoder[A] {
-  def encode(value: A): Bencode
-}
-
-

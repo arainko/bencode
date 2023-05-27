@@ -11,7 +11,7 @@ ThisBuild / developers := List(
     url("https://github.com/arainko")
   )
 )
-ThisBuild / scalaVersion := "3.2.1"
+ThisBuild / scalaVersion := "3.3.0"
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 name := "bencode"
@@ -28,7 +28,8 @@ lazy val bencode =
   project
     .in(file("bencode"))
     .settings(
-      scalacOptions ++= List("-Xcheck-macros", "-no-indent", "-old-syntax", "-Xfatal-warnings"),
+      scalacOptions ++= List("-Xcheck-macros", /*"-Xfatal-warnings",*/ "-Wunused:all", "-Ykind-projector:underscores", "-Xsource:future"),
       libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M6" % Test,
-      libraryDependencies += "org.scodec" %% "scodec-core" % "2.2.0"
+      libraryDependencies += "org.scodec" %% "scodec-core" % "2.2.0",
+      libraryDependencies += "org.typelevel" %% "cats-free" % "2.9.0"
     )
