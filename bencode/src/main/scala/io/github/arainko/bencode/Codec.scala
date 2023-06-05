@@ -8,21 +8,18 @@ import scala.annotation.nowarn
 enum Codec[A]:
   self =>
 
-  final def encode(value: A): Bencode = ???
-  final def decode(bencode: Bencode): Either[Codec.Error, A] = ???
+  final def encode(value: A): Bencode = Encoder.encode(this)(value)
+  final def decode(bencode: Bencode): Either[Codec.Error, A] = Decoder.decode(this)(bencode)
 
   final def imap[B](to: A => B)(from: B => A): Codec[B] =
-    xmap(to.andThen(Right.apply))(from.andThen(Right.apply))
+    imapErr(to.andThen(Right.apply))(from)
 
-  final def imapErr[B](to: A => Either[String, B])(from: B => A): Codec[B] =
-    xmap(to)(from.andThen(Right.apply))
-
-  final def xmap[B](_to: A => Either[String, B])(_from: B => Either[String, A]): Codec[B] =
+  final def imapErr[B](_to: A => Either[String, B])(_from: B => A): Codec[B] =
     Codec.Transformed:
       new:
         type Repr = A
         val codec: Codec[Repr] = self
-        def from(value: B): Either[Codec.Error, Repr] = _from(value).left.map(Codec.Error(_))
+        def from(value: B): Repr = _from(value)
         def to(repr: A): Either[Codec.Error, B] = _to(repr).left.map(Codec.Error(_))
 
   case Identity extends Codec[Bencode]
@@ -39,7 +36,7 @@ object Codec:
 
   given string: Codec[String] =
     Codec.ByteVector
-      .xmap(_.decodeUtf8.left.map(_.getMessage))(str => scodec.bits.ByteVector.encodeUtf8(str).left.map(_.getMessage))
+      .imapErr(_.decodeUtf8.left.map(_.getMessage))(str => scodec.bits.ByteVector(str.getBytes))
 
   given long: Codec[Long] = Codec.Long
 
@@ -51,8 +48,6 @@ object Codec:
 
   def product[A](builder: Field.Builder[A] => FreeApplicative[Codec.Field[A, _], A]): Codec[A] =
     Codec.Product(builder(Field.Builder()))
-
-  def coproduct[A](builed: Case.Builder[A] => FreeApplicative[Codec.Case[A, _], A]): Codec[A] = ???
 
   enum Field[RecordType, FieldType]:
     case Required[RecordType, FieldType](
@@ -83,15 +78,13 @@ object Codec:
 
       def const[A](name: String, value: A)(using A: Codec[A]): FreeApplicative[Field[RecordType, _], Unit] =
         given Codec[Unit] =
-          A.xmap(a => Either.cond(a == value, (), s"$a does not match const $value"))(_ => Right(value))
+          A.imapErr(a => Either.cond(a == value, (), s"$a does not match const $value"))(_ => value)
         apply(name, _ => value): @nowarn("msg=A pure expression does nothing")
-
-  // enum Case 
 
   trait Transformation[A]:
     type Repr
     def codec: Codec[Repr]
-    def from(value: A): Either[Codec.Error, Repr]
+    def from(value: A): Repr
     def to(repr: Repr): Either[Codec.Error, A]
 
   final class Error(message: String) extends Exception:
