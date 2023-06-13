@@ -5,13 +5,13 @@ import scala.reflect.ClassTag
 // copied over from here: https://github.com/SystemFw/dynosaur/blob/main/modules/core/shared/src/main/scala/Prism.scala
 case class Prism[A, B](tryGet: A => Option[B], inject: B => A)
 
-object Prism extends LowPrioPrism {
+object Prism extends LowPrioPrism:
 
   def fromPartial[A, B](tryGet: PartialFunction[A, B])(inject: B => A) =
     Prism(tryGet.lift, inject)
 
   given identity[A]: Prism[A, A] =
-    Prism[A, A](Option.apply _, a => a)
+    Prism[A, A](Option.apply, a => a)
 
   given left[A, B]: Prism[Either[A, B], Left[A, B]] =
     Prism.fromPartial[Either[A, B], Left[A, B]] { case v @ Left(_) =>
@@ -32,13 +32,12 @@ object Prism extends LowPrioPrism {
     Prism.fromPartial[Option[A], Some[A]] { case v @ Some(_) =>
       v
     }(v => v)
-}
 
-private[bencode] sealed trait LowPrioPrism {
+private[bencode] sealed trait LowPrioPrism:
 
-  given derive[S, A <: S](using
+  given derive[S <: Matchable, A <: S](using
       tag: ClassTag[A]
-  ): Prism[S, A] = {
+  ): Prism[S, A] =
     val tryGet = (s: S) =>
       PartialFunction.condOpt(s): 
         case tag(inst) => inst
@@ -46,5 +45,3 @@ private[bencode] sealed trait LowPrioPrism {
     val inject = (a: A) => (a: S)
 
     Prism(tryGet, inject)
-  }
-}

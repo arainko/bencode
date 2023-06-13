@@ -1,11 +1,14 @@
 package io.github.arainko.bencode
 
-import scala.collection.immutable.SortedMap
-import cats.free.FreeApplicative
 import cats.MonoidK
-import cats.kernel.Monoid
 import cats.arrow.FunctionK
+import cats.free.FreeApplicative
+import cats.kernel.Monoid
 import io.github.arainko.bencode.Codec.Field
+
+import scala.collection.immutable.SortedMap
+import cats.kernel.Order
+import scodec.bits.ByteVector
 
 object Encoder:
   def encode[A](codec: Codec[A])(value: A): Bencode =

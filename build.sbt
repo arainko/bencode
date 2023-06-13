@@ -28,7 +28,7 @@ lazy val bencode =
   project
     .in(file("bencode"))
     .settings(
-      scalacOptions ++= List("-Xcheck-macros", /*"-Xfatal-warnings",*/ "-Wunused:all", "-Ykind-projector:underscores", "-Xsource:future"),
+      scalacOptions ++= List("-Xcheck-macros", "-Wunused:all", "-Ykind-projector:underscores", "-source:future"),
       libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M6" % Test,
       libraryDependencies += "org.scodec" %% "scodec-core" % "2.2.0",
       libraryDependencies += "org.typelevel" %% "cats-free" % "2.9.0"
