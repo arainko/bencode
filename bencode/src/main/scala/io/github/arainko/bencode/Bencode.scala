@@ -17,4 +17,6 @@ enum Bencode:
 
   // bencode dicts are supposed to have stable order
   // bencode repr of Map("field1" -> 123): d6:field1i123ee
-  case Dict(values: SortedMap[java.lang.String, Bencode])
+  case Dict(values: SortedMap[ByteVector, Bencode])
+
+

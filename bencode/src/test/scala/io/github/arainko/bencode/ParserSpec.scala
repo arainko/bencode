@@ -1,16 +1,36 @@
 package io.github.arainko.bencode
 
 import munit.*
-import scodec.DecodeResult
-import scodec.bits.ByteVector
+import scodec.*
+import scodec.bits.{ BitVector, ByteVector }
+import scodec.codecs.*
+import io.github.arainko.bencode.internal.*
 
 import scala.util.chaining.*
-import scodec.bits.BitVector
 
 class ParserSpec extends FunSuite {
-  roundripTest("Bencode.Long")(
-    expected = Bencode.Long(1),
-    bencode = "i1e"
+
+  test("test") {
+    import scodec.codecs.*
+
+    Parser.number(0x3a).decode(encode("-123:").bits).tap(println)
+    // Parser.number(0x3a).encode(-123).tap(println)
+    logToStdOut(Parser.number(0x3a), "number codec").encode(-123)
+
+    // delim.encode(List(1, 2, 3, 5)).map(_.decodeUtf8).tap(println)
+
+    // digit.encode(3).map.tap(println)
+
+  }
+
+  roundripTest("positive Bencode.Long")(
+    expected = Bencode.Long(123),
+    bencode = "i123e"
+  )
+
+  roundripTest("negative Bencode.Long")(
+    expected = Bencode.Long(-123),
+    bencode = "i-123e"
   )
 
   roundripTest("Bencode.String")(
@@ -18,14 +38,10 @@ class ParserSpec extends FunSuite {
     bencode = "4:test"
   )
 
-  test("dupal") {
-    Parser.digits.decode(BitVector("12317283e".getBytes)).tap(println)
-  }
-
   private def roundripTest(description: String)(expected: Bencode, bencode: String) =
     test(s"roundrip $description"):
       val expectedBytes = encode(bencode)
-      val encoded = Parser.encode(expected).getOrElse(throw new RuntimeException("encoding failed :("))
+      val encoded = Parser.encode(expected).toTry.get
       assertEquals(encoded, expectedBytes)
       val decoded = Parser.decode(encoded).toTry.get
       assert(decoded.remainder.isEmpty)

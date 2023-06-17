@@ -1,4 +1,4 @@
-package io.github.arainko.bencode
+package io.github.arainko.bencode.internal
 
 import cats.MonoidK
 import cats.arrow.FunctionK
@@ -9,6 +9,8 @@ import io.github.arainko.bencode.Codec.Field
 import scala.collection.immutable.SortedMap
 import cats.kernel.Order
 import scodec.bits.ByteVector
+import io.github.arainko.bencode.*
+
 
 object Encoder:
   def encode[A](codec: Codec[A])(value: A): Bencode =
@@ -21,15 +23,18 @@ object Encoder:
       case Codec.Product(fieldComposition)   => encodeProduct(fieldComposition)(value)
       case Codec.Transformed(transformation) => encode(transformation.codec)(transformation.from(value))
 
+  private given Order[ByteVector] = Order.fromOrdering
+  private given Monoid[SortedMap[ByteVector, Bencode]] = MonoidK[SortedMap[ByteVector, _]].algebra
+
   private def encodeProduct[A](fieldComposition: FreeApplicative[Codec.Field[A, _], A])(value: A): Bencode =
-    given Monoid[SortedMap[String, Bencode]] = MonoidK[SortedMap[String, _]].algebra
     val enc = [fieldTpe] =>
       (field: Codec.Field[A, fieldTpe]) =>
         field match
           case Field.Required(name, fieldCodec, getter) =>
-            SortedMap(name -> encode(fieldCodec)(getter(value)))
+            SortedMap(ByteVector.view(name.getBytes("utf-8")) -> encode(fieldCodec)(getter(value)))
           case Field.Optional(name, fieldCodec, getter) =>
             getter(value)
-              .map(field => SortedMap(name -> encode(fieldCodec)(field)))
-              .getOrElse(SortedMap.empty[String, Bencode])
+              .map(field => SortedMap(ByteVector.view(name.getBytes("utf-8")) -> encode(fieldCodec)(field)))
+              .getOrElse(SortedMap.empty[ByteVector, Bencode])
+              
     Bencode.Dict(fieldComposition.analyze(FunctionK.lift(enc)))

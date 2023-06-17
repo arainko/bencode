@@ -1,13 +1,15 @@
 package io.github.arainko.bencode
 
 import cats.syntax.all.*
-import scodec.bits.ByteVector
-import scodec.bits.BitVector
+import io.github.arainko.bencode.internal.Parser
+import scodec.bits.{ ByteVector }
+
+import scala.util.chaining.*
 
 final case class Test(int: Long, str: String, opt: Option[Long], cos: Vector[Long])
 
 object Test {
-  given codec: Codec[Test] = 
+  given codec: Codec[Test] =
     Codec.product: field =>
       (
         field("int", _.int),
@@ -17,9 +19,8 @@ object Test {
       ).mapN(Test.apply)
 }
 
-@main def main = 
+@main def main =
   val inst = Test(20L, "asd", None, Vector(1, 2, 3, 4))
-  val encoded = Test.codec.encode(inst)
-  println(Parser.encode(encoded).map(Parser.decode))
-  println('5'.toString())
+  val encoded = Test.codec.encode(inst).tap(println)
+  println(Parser.unparse(encoded).tap(a => println(a.decodeUtf8)).pipe(Parser.parse))
   println(Test.codec.decode(encoded))

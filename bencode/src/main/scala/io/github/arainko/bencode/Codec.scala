@@ -4,6 +4,8 @@ import scodec.bits.ByteVector
 import cats.free.FreeApplicative
 import java.lang
 import scala.annotation.nowarn
+import io.github.arainko.bencode.internal.Encoder
+import io.github.arainko.bencode.internal.Decoder
 
 enum Codec[A]:
   self =>
@@ -26,7 +28,7 @@ enum Codec[A]:
   case Long extends Codec[scala.Long]
   case ByteVector extends Codec[scodec.bits.ByteVector]
   case Vector[Elem](codec: Codec[Elem]) extends Codec[scala.Vector[Elem]]
-  case Dict[Elem](codec: Codec[Elem]) extends Codec[Map[String, Elem]]
+  case Dict[Elem](codec: Codec[Elem]) extends Codec[Map[ByteVector, Elem]]
   case Product[RecordType](fieldComposition: FreeApplicative[Codec.Field[RecordType, _], RecordType]) extends Codec[RecordType]
   case Transformed[A](transformation: Codec.Transformation[A]) extends Codec[A]
 
@@ -44,7 +46,7 @@ object Codec:
 
   given vector[A](using A: Codec[A]): Codec[scala.Vector[A]] = Codec.Vector(A)
 
-  given map[A](using A: Codec[A]): Codec[Map[String, A]] = Codec.Dict(A)
+  given map[A](using A: Codec[A]): Codec[Map[ByteVector, A]] = Codec.Dict(A)
 
   def product[A](builder: Field.Builder[A] => FreeApplicative[Codec.Field[A, _], A]): Codec[A] =
     Codec.Product(builder(Field.Builder()))

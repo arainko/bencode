@@ -1,4 +1,4 @@
-package io.github.arainko.bencode
+package io.github.arainko.bencode.internal
 
 import scala.reflect.ClassTag
 import cats.syntax.all.*
@@ -6,6 +6,8 @@ import cats.free.FreeApplicative
 import io.github.arainko.bencode.Codec.Field
 import cats.arrow.FunctionK
 import scala.annotation.nowarn
+import scodec.bits.ByteVector
+import io.github.arainko.bencode.*
 
 object Decoder:
   def decode[A](codec: Codec[A])(bencode: Bencode): Either[Codec.Error, A] =
@@ -28,17 +30,17 @@ object Decoder:
     bencode: Bencode
   ): Either[Codec.Error, A] =
     @nowarn("msg=unused")
-    val decodeFn: [fieldTpe] => (Codec.Field[A, fieldTpe], Map[String, Bencode]) => Either[Codec.Error, fieldTpe] =
+    val decodeFn: [fieldTpe] => (Codec.Field[A, fieldTpe], Map[ByteVector, Bencode]) => Either[Codec.Error, fieldTpe] =
       [fieldTpe] =>
-        (field: Codec.Field[A, fieldTpe], fields: Map[String, Bencode]) =>
+        (field: Codec.Field[A, fieldTpe], fields: Map[ByteVector, Bencode]) =>
           field match
             case Field.Required(name, fieldCodec, getter) =>
               fields
-                .get(name)
+                .get(ByteVector.view(name.getBytes("utf-8")))
                 .toRight(Codec.Error(s"Field '$name' not found"))
                 .flatMap(decode(fieldCodec))
             case Field.Optional(name, fieldCodec, getter) =>
-              fields.get(name).traverse(decode(fieldCodec))
+              fields.get(ByteVector.view(name.getBytes("utf-8"))).traverse(decode(fieldCodec))
 
     specificBencode[Bencode.Dict](bencode).flatMap: dict =>
       val applied = [fieldTpe] => (field: Codec.Field[A, fieldTpe]) => decodeFn(field, dict.values)
