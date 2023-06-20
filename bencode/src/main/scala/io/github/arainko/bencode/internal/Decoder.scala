@@ -8,6 +8,7 @@ import cats.arrow.FunctionK
 import scala.annotation.nowarn
 import scodec.bits.ByteVector
 import io.github.arainko.bencode.*
+import java.nio.charset.StandardCharsets
 
 object Decoder:
   def decode[A](codec: Codec[A])(bencode: Bencode): Either[Codec.Error, A] =
@@ -36,11 +37,11 @@ object Decoder:
           field match
             case Field.Required(name, fieldCodec, getter) =>
               fields
-                .get(ByteVector.view(name.getBytes("utf-8")))
+                .get(ByteVector.view(name.getBytes(StandardCharsets.UTF_8)))
                 .toRight(Codec.Error(s"Field '$name' not found"))
                 .flatMap(decode(fieldCodec))
             case Field.Optional(name, fieldCodec, getter) =>
-              fields.get(ByteVector.view(name.getBytes("utf-8"))).traverse(decode(fieldCodec))
+              fields.get(ByteVector.view(name.getBytes(StandardCharsets.UTF_8))).traverse(decode(fieldCodec))
 
     specificBencode[Bencode.Dict](bencode).flatMap: dict =>
       val applied = [fieldTpe] => (field: Codec.Field[A, fieldTpe]) => decodeFn(field, dict.values)

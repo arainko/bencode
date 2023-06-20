@@ -10,6 +10,7 @@ import scala.collection.immutable.SortedMap
 import cats.kernel.Order
 import scodec.bits.ByteVector
 import io.github.arainko.bencode.*
+import java.nio.charset.StandardCharsets
 
 
 object Encoder:
@@ -31,10 +32,10 @@ object Encoder:
       (field: Codec.Field[A, fieldTpe]) =>
         field match
           case Field.Required(name, fieldCodec, getter) =>
-            SortedMap(ByteVector.view(name.getBytes("utf-8")) -> encode(fieldCodec)(getter(value)))
+            SortedMap(ByteVector.view(name.getBytes(StandardCharsets.UTF_8)) -> encode(fieldCodec)(getter(value)))
           case Field.Optional(name, fieldCodec, getter) =>
             getter(value)
-              .map(field => SortedMap(ByteVector.view(name.getBytes("utf-8")) -> encode(fieldCodec)(field)))
+              .map(field => SortedMap(ByteVector.view(name.getBytes(StandardCharsets.UTF_8)) -> encode(fieldCodec)(field)))
               .getOrElse(SortedMap.empty[ByteVector, Bencode])
               
     Bencode.Dict(fieldComposition.analyze(FunctionK.lift(enc)))
